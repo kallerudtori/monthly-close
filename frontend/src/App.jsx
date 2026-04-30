@@ -18,7 +18,9 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [addingGroup, setAddingGroup] = useState(false);
   const [newGroupTitle, setNewGroupTitle] = useState('');
+  const [addGroupError, setAddGroupError] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [initError, setInitError] = useState(null);
   const pollRef = useRef(null);
 
   const loadTasks = useCallback(async (monthId) => {
@@ -53,8 +55,12 @@ export default function App() {
         await loadTasks(current.id);
       }
       await loadTeamMembers();
+      setInitError(null);
     } catch (err) {
       console.error('Init error:', err);
+      setInitError(
+        'Could not connect to the server. Make sure the backend is running and your DATABASE_URL is set.'
+      );
     } finally {
       setLoading(false);
     }
@@ -89,10 +95,15 @@ export default function App() {
 
   async function handleAddGroup() {
     if (!newGroupTitle.trim()) return;
-    await api.addParentTask(selectedMonthId, newGroupTitle.trim());
-    setNewGroupTitle('');
-    setAddingGroup(false);
-    await loadTasks(selectedMonthId);
+    setAddGroupError(null);
+    try {
+      await api.addParentTask(selectedMonthId, newGroupTitle.trim());
+      setNewGroupTitle('');
+      setAddingGroup(false);
+      await loadTasks(selectedMonthId);
+    } catch (err) {
+      setAddGroupError(err.message);
+    }
   }
 
   async function handleMoveGroup(index, direction) {
@@ -101,7 +112,11 @@ export default function App() {
     if (swapIndex < 0 || swapIndex >= newTasks.length) return;
     [newTasks[index], newTasks[swapIndex]] = [newTasks[swapIndex], newTasks[index]];
     setTasks(newTasks);
-    await api.reorderParents(selectedMonthId, newTasks.map(t => t.id));
+    try {
+      await api.reorderParents(selectedMonthId, newTasks.map(t => t.id));
+    } catch (err) {
+      console.error('Reorder failed:', err);
+    }
   }
 
   function handleLogout() {
@@ -121,6 +136,20 @@ export default function App() {
       <div style={styles.loadingScreen}>
         <div style={styles.spinner} />
         <p style={{ color: '#6b7280', marginTop: 16 }}>Loading…</p>
+      </div>
+    );
+  }
+
+  if (initError) {
+    return (
+      <div style={styles.loadingScreen}>
+        <div style={styles.errorCard}>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1a1a2e', marginBottom: 8 }}>
+            Connection Error
+          </h2>
+          <p style={{ color: '#6b7280', fontSize: 14, marginBottom: 20 }}>{initError}</p>
+          <button onClick={init} style={styles.retryBtn}>Retry</button>
+        </div>
       </div>
     );
   }
@@ -162,17 +191,25 @@ export default function App() {
         {!isReadOnly && (
           <div style={styles.addGroupSection}>
             {addingGroup ? (
-              <div style={styles.addGroupForm}>
-                <input
-                  autoFocus
-                  value={newGroupTitle}
-                  onChange={(e) => setNewGroupTitle(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') handleAddGroup(); if (e.key === 'Escape') { setAddingGroup(false); setNewGroupTitle(''); } }}
-                  placeholder="Group name…"
-                  style={styles.addGroupInput}
-                />
-                <button onClick={handleAddGroup} style={styles.addConfirmBtn}>Add Group</button>
-                <button onClick={() => { setAddingGroup(false); setNewGroupTitle(''); }} style={styles.cancelBtn}>Cancel</button>
+              <div>
+                <div style={styles.addGroupForm}>
+                  <input
+                    autoFocus
+                    value={newGroupTitle}
+                    onChange={(e) => setNewGroupTitle(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleAddGroup();
+                      if (e.key === 'Escape') { setAddingGroup(false); setNewGroupTitle(''); setAddGroupError(null); }
+                    }}
+                    placeholder="Group name…"
+                    style={styles.addGroupInput}
+                  />
+                  <button onClick={handleAddGroup} style={styles.addConfirmBtn}>Add Group</button>
+                  <button onClick={() => { setAddingGroup(false); setNewGroupTitle(''); setAddGroupError(null); }} style={styles.cancelBtn}>Cancel</button>
+                </div>
+                {addGroupError && (
+                  <p style={{ color: '#dc2626', fontSize: 13, marginTop: 6 }}>Error: {addGroupError}</p>
+                )}
               </div>
             ) : (
               <button onClick={() => setAddingGroup(true)} style={styles.addGroupBtn}>
@@ -200,6 +237,14 @@ const styles = {
   loadingScreen: {
     minHeight: '100vh', display: 'flex', flexDirection: 'column',
     alignItems: 'center', justifyContent: 'center',
+  },
+  errorCard: {
+    background: '#fff', borderRadius: 12, padding: '32px 40px',
+    boxShadow: '0 4px 24px rgba(0,0,0,0.10)', textAlign: 'center', maxWidth: 420,
+  },
+  retryBtn: {
+    background: '#2563eb', color: '#fff', border: 'none',
+    borderRadius: 8, padding: '10px 24px', fontSize: 14, fontWeight: 600, cursor: 'pointer',
   },
   spinner: {
     width: 36, height: 36, border: '3px solid #e5e7eb',
