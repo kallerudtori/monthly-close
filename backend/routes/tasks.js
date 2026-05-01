@@ -7,10 +7,13 @@ router.get('/month/:monthId', async (req, res) => {
   try {
     const { monthId } = req.params;
 
-    // Check if month is read-only (not the latest month)
-    const monthsResult = await pool.query('SELECT id FROM months ORDER BY year DESC, month DESC LIMIT 1');
-    const latestMonthId = monthsResult.rows[0]?.id;
-    const isReadOnly = latestMonthId && parseInt(monthId) !== latestMonthId;
+    // Read-only if the month is before the current calendar month
+    const now = new Date();
+    const monthData = await pool.query('SELECT year, month FROM months WHERE id = $1', [monthId]);
+    if (monthData.rows.length === 0) return res.status(404).json({ error: 'Month not found' });
+    const { year, month } = monthData.rows[0];
+    const isReadOnly = year < now.getFullYear() ||
+      (year === now.getFullYear() && month < now.getMonth() + 1);
 
     const parents = await pool.query(
       `SELECT * FROM tasks WHERE month_id = $1 AND parent_task_id IS NULL ORDER BY sort_order`,

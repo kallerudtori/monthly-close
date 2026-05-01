@@ -5,8 +5,13 @@ const MONTH_NAMES = [
   'July','August','September','October','November','December'
 ];
 
-export default function Nav({ months, selectedMonthId, onSelectMonth, onOpenSettings, onLogout }) {
-  const selectedMonth = months.find(m => m.id === selectedMonthId);
+export default function Nav({ months, selectedMonthId, onSelectMonth, onOpenSettings, onLogout, onPrepareNextMonth }) {
+  // Determine if next month already exists
+  const now = new Date();
+  const nextMonth = now.getMonth() + 2 > 12 ? 1 : now.getMonth() + 2;
+  const nextYear = now.getMonth() + 2 > 12 ? now.getFullYear() + 1 : now.getFullYear();
+  const nextMonthExists = months.some(m => m.month === nextMonth && m.year === nextYear);
+  const nextMonthName = `${MONTH_NAMES[nextMonth - 1]} ${nextYear}`;
 
   return (
     <nav style={styles.nav}>
@@ -24,6 +29,11 @@ export default function Nav({ months, selectedMonthId, onSelectMonth, onOpenSett
               </option>
             ))}
           </select>
+        )}
+        {!nextMonthExists && (
+          <button onClick={onPrepareNextMonth} style={styles.prepareBtn} title={`Set up ${nextMonthName} checklist early`}>
+            + Prepare {nextMonthName}
+          </button>
         )}
       </div>
       <div style={styles.right}>
@@ -52,7 +62,7 @@ const styles = {
     background: '#1a1a2e',
     boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
   },
-  left: { display: 'flex', alignItems: 'center', gap: 20 },
+  left: { display: 'flex', alignItems: 'center', gap: 16 },
   logo: { fontSize: 18, fontWeight: 700, color: '#fff', letterSpacing: '-0.3px' },
   select: {
     padding: '6px 12px',
@@ -64,6 +74,16 @@ const styles = {
     cursor: 'pointer',
     outline: 'none',
   },
+  prepareBtn: {
+    background: 'none',
+    border: '1.5px solid #4b5563',
+    color: '#9ca3af',
+    fontSize: 12,
+    fontWeight: 500,
+    padding: '5px 12px',
+    borderRadius: 6,
+    cursor: 'pointer',
+  },
   right: { display: 'flex', alignItems: 'center', gap: 12 },
   iconBtn: {
     background: 'none',
@@ -74,7 +94,6 @@ const styles = {
     borderRadius: 6,
     display: 'flex',
     alignItems: 'center',
-    transition: 'color 0.2s',
   },
   logoutBtn: {
     background: 'none',

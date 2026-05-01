@@ -44,6 +44,7 @@ export const api = {
 
   getMonths: () => request('GET', '/months'),
   ensureCurrentMonth: () => request('POST', '/months/ensure-current'),
+  prepareMonth: (year, month) => request('POST', '/months/prepare', { year, month }),
 
   getTasksForMonth: (monthId) => request('GET', `/tasks/month/${monthId}`),
   updateTask: (id, data) => request('PATCH', `/tasks/${id}`, data),

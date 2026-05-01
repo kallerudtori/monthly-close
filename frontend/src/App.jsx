@@ -106,6 +106,20 @@ export default function App() {
     }
   }
 
+  async function handlePrepareNextMonth() {
+    const now = new Date();
+    const nextMonth = now.getMonth() + 2 > 12 ? 1 : now.getMonth() + 2;
+    const nextYear = now.getMonth() + 2 > 12 ? now.getFullYear() + 1 : now.getFullYear();
+    try {
+      const newMonth = await api.prepareMonth(nextYear, nextMonth);
+      const data = await loadMonths();
+      setSelectedMonthId(newMonth.id);
+      await loadTasks(newMonth.id);
+    } catch (err) {
+      alert('Failed to prepare next month: ' + err.message);
+    }
+  }
+
   async function handleMoveGroup(index, direction) {
     const newTasks = [...tasks];
     const swapIndex = index + direction;
@@ -162,6 +176,7 @@ export default function App() {
         onSelectMonth={handleSelectMonth}
         onOpenSettings={() => setShowSettings(true)}
         onLogout={handleLogout}
+        onPrepareNextMonth={handlePrepareNextMonth}
       />
 
       <main style={styles.main}>
