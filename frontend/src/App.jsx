@@ -106,6 +106,23 @@ export default function App() {
     }
   }
 
+  async function handleCopyFromPrevious() {
+    const now = new Date();
+    const selected = months.find(m => m.id === selectedMonthId);
+    if (!selected) return;
+    const prevMonth = selected.month === 1 ? 12 : selected.month - 1;
+    const prevYear = selected.month === 1 ? selected.year - 1 : selected.year;
+    const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    if (!window.confirm(`Copy assignees and due dates from ${MONTH_NAMES[prevMonth - 1]} ${prevYear} into ${MONTH_NAMES[selected.month - 1]} ${selected.year}?\n\nDates will shift to the same day number (e.g. May 5 → June 5). This will overwrite any dates/assignees already set for this month.`)) return;
+    try {
+      const { updated } = await api.copyFromPrevious(selectedMonthId);
+      await loadTasks(selectedMonthId);
+      alert(`Done! Copied data for ${updated} subtask${updated !== 1 ? 's' : ''}.`);
+    } catch (err) {
+      alert('Copy failed: ' + err.message);
+    }
+  }
+
   async function handlePrepareNextMonth() {
     const now = new Date();
     const nextMonth = now.getMonth() + 2 > 12 ? 1 : now.getMonth() + 2;
@@ -184,9 +201,29 @@ export default function App() {
 
         {isReadOnly && (
           <div style={styles.readOnlyBanner}>
-            This month is read-only. Only the current month can be edited.
+            This month is read-only. Only the current and future months can be edited.
           </div>
         )}
+
+        {!isReadOnly && selectedMonth && (() => {
+          const now = new Date();
+          const isFuture = selectedMonth.year > now.getFullYear() ||
+            (selectedMonth.year === now.getFullYear() && selectedMonth.month > now.getMonth() + 1);
+          const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+          const prevMonth = selectedMonth.month === 1 ? 12 : selectedMonth.month - 1;
+          const prevYear = selectedMonth.month === 1 ? selectedMonth.year - 1 : selectedMonth.year;
+          if (!isFuture) return null;
+          return (
+            <div style={styles.copyBanner}>
+              <span style={{ color: '#374151', fontSize: 13 }}>
+                Pre-planning <strong>{MONTH_NAMES[selectedMonth.month - 1]}</strong>?
+              </span>
+              <button onClick={handleCopyFromPrevious} style={styles.copyBtn}>
+                ↙ Copy assignees &amp; dates from {MONTH_NAMES[prevMonth - 1]} {prevYear}
+              </button>
+            </div>
+          );
+        })()}
 
         {tasks.map((task, i) => (
           <ParentTask
@@ -270,6 +307,16 @@ const styles = {
     background: '#fef9c3', border: '1px solid #fde047',
     borderRadius: 8, padding: '10px 16px',
     fontSize: 13, color: '#854d0e', marginBottom: 16,
+  },
+  copyBanner: {
+    display: 'flex', alignItems: 'center', gap: 12,
+    background: '#eff6ff', border: '1px solid #bfdbfe',
+    borderRadius: 8, padding: '10px 16px', marginBottom: 16,
+  },
+  copyBtn: {
+    background: '#2563eb', color: '#fff', border: 'none',
+    borderRadius: 6, padding: '6px 14px', fontSize: 13,
+    fontWeight: 500, cursor: 'pointer',
   },
   addGroupSection: { marginTop: 8 },
   addGroupForm: { display: 'flex', gap: 8, alignItems: 'center' },

@@ -121,6 +121,79 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+// Copy assignees + due dates from previous month into target month
+router.post('/copy-from-previous/:monthId', async (req, res) => {
+  const { monthId } = req.params;
+  const client = await pool.connect();
+  try {
+    // Get target month info
+    const targetRes = await pool.query('SELECT year, month FROM months WHERE id = $1', [monthId]);
+    if (targetRes.rows.length === 0) return res.status(404).json({ error: 'Month not found' });
+    const { year: targetYear, month: targetMonth } = targetRes.rows[0];
+
+    // Find previous month
+    const prevMonth = targetMonth === 1 ? 12 : targetMonth - 1;
+    const prevYear = targetMonth === 1 ? targetYear - 1 : targetYear;
+    const sourceRes = await pool.query(
+      'SELECT id FROM months WHERE year = $1 AND month = $2',
+      [prevYear, prevMonth]
+    );
+    if (sourceRes.rows.length === 0) {
+      return res.status(404).json({ error: `No data found for ${prevMonth}/${prevYear} to copy from` });
+    }
+    const sourceMonthId = sourceRes.rows[0].id;
+
+    // Get all subtasks from source month with their assignee and due_date
+    const sourceTasks = await pool.query(
+      `SELECT template_id, title, assignee, due_date
+       FROM tasks WHERE month_id = $1 AND parent_task_id IS NOT NULL`,
+      [sourceMonthId]
+    );
+
+    // Last day of target month (handles e.g. May 31 → June 30)
+    const lastDayOfTargetMonth = new Date(targetYear, targetMonth, 0).getDate();
+
+    await client.query('BEGIN');
+    let updated = 0;
+    for (const src of sourceTasks.rows) {
+      if (!src.assignee && !src.due_date) continue;
+
+      // Shift due date: same day number, new month/year, clamped to month length
+      let newDueDate = null;
+      if (src.due_date) {
+        const day = new Date(src.due_date).getUTCDate();
+        const clampedDay = Math.min(day, lastDayOfTargetMonth);
+        newDueDate = `${targetYear}-${String(targetMonth).padStart(2, '0')}-${String(clampedDay).padStart(2, '0')}`;
+      }
+
+      // Match target task by template_id, falling back to title match
+      let matchQuery, matchParams;
+      if (src.template_id) {
+        matchQuery = `SELECT id FROM tasks WHERE month_id = $1 AND template_id = $2 AND parent_task_id IS NOT NULL`;
+        matchParams = [monthId, src.template_id];
+      } else {
+        matchQuery = `SELECT id FROM tasks WHERE month_id = $1 AND title = $2 AND parent_task_id IS NOT NULL`;
+        matchParams = [monthId, src.title];
+      }
+      const targets = await client.query(matchQuery, matchParams);
+      for (const t of targets.rows) {
+        await client.query(
+          `UPDATE tasks SET assignee = $1, due_date = $2, updated_at = NOW() WHERE id = $3`,
+          [src.assignee || null, newDueDate, t.id]
+        );
+        updated++;
+      }
+    }
+    await client.query('COMMIT');
+    res.json({ ok: true, updated });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ error: err.message });
+  } finally {
+    client.release();
+  }
+});
+
 // Reorder parent tasks
 router.post('/reorder-parents', async (req, res) => {
   const { monthId, orderedIds } = req.body;
