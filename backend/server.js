@@ -45,10 +45,16 @@ async function initDb() {
 
 app.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
+  const dbUrl = process.env.DATABASE_URL;
+  if (!dbUrl) {
+    console.error('ERROR: DATABASE_URL is not set. Available env vars:', Object.keys(process.env).filter(k => k.includes('POSTGRES') || k.includes('DATABASE') || k.includes('PG')).join(', ') || 'none found');
+  } else {
+    console.log('DATABASE_URL is set, host:', dbUrl.split('@')[1]?.split('/')[0] ?? 'unknown');
+  }
   try {
     await initDb();
     console.log('Database initialized');
   } catch (err) {
-    console.error('DB init error:', err.message);
+    console.error('DB init error:', err.message || err);
   }
 });
