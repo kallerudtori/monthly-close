@@ -113,11 +113,14 @@ export default function App() {
     const prevMonth = selected.month === 1 ? 12 : selected.month - 1;
     const prevYear = selected.month === 1 ? selected.year - 1 : selected.year;
     const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-    if (!window.confirm(`Copy assignees and due dates from ${MONTH_NAMES[prevMonth - 1]} ${prevYear} into ${MONTH_NAMES[selected.month - 1]} ${selected.year}?\n\nDates will shift to the same day number (e.g. May 5 → June 5). This will overwrite any dates/assignees already set for this month.`)) return;
+    if (!window.confirm(`Copy from ${MONTH_NAMES[prevMonth - 1]} ${prevYear} into ${MONTH_NAMES[selected.month - 1]} ${selected.year}?\n\n• Assignees and due dates will be carried over (dates shift by day number, e.g. May 5 → June 5)\n• Any tasks/subtasks added in ${MONTH_NAMES[prevMonth - 1]} that don't exist yet in ${MONTH_NAMES[selected.month - 1]} will be created\n\nExisting assignees and dates in ${MONTH_NAMES[selected.month - 1]} will be overwritten.`)) return;
     try {
-      const { updated } = await api.copyFromPrevious(selectedMonthId);
+      const { updated, created } = await api.copyFromPrevious(selectedMonthId);
       await loadTasks(selectedMonthId);
-      alert(`Done! Copied data for ${updated} subtask${updated !== 1 ? 's' : ''}.`);
+      const parts = [];
+      if (updated > 0) parts.push(`${updated} task${updated !== 1 ? 's' : ''} updated`);
+      if (created > 0) parts.push(`${created} new task${created !== 1 ? 's' : ''} added`);
+      alert(`Done! ${parts.join(', ') || 'Nothing to copy'}.`);
     } catch (err) {
       alert('Copy failed: ' + err.message);
     }

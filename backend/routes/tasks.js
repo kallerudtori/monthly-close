@@ -121,7 +121,7 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-// Copy assignees + due dates from previous month into target month
+// Copy assignees, due dates, AND any new tasks from previous month into target month
 router.post('/copy-from-previous/:monthId', async (req, res) => {
   const { monthId } = req.params;
   const client = await pool.connect();
@@ -143,49 +143,108 @@ router.post('/copy-from-previous/:monthId', async (req, res) => {
     }
     const sourceMonthId = sourceRes.rows[0].id;
 
-    // Get all subtasks from source month with their assignee and due_date
-    const sourceTasks = await pool.query(
-      `SELECT template_id, title, assignee, due_date
-       FROM tasks WHERE month_id = $1 AND parent_task_id IS NOT NULL`,
-      [sourceMonthId]
-    );
-
     // Last day of target month (handles e.g. May 31 → June 30)
-    const lastDayOfTargetMonth = new Date(targetYear, targetMonth, 0).getDate();
+    const lastDay = new Date(targetYear, targetMonth, 0).getDate();
+
+    function shiftDate(due_date) {
+      if (!due_date) return null;
+      const day = new Date(due_date).getUTCDate();
+      const d = Math.min(day, lastDay);
+      return `${targetYear}-${String(targetMonth).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    }
 
     await client.query('BEGIN');
     let updated = 0;
-    for (const src of sourceTasks.rows) {
-      if (!src.assignee && !src.due_date) continue;
+    let created = 0;
 
-      // Shift due date: same day number, new month/year, clamped to month length
-      let newDueDate = null;
-      if (src.due_date) {
-        const day = new Date(src.due_date).getUTCDate();
-        const clampedDay = Math.min(day, lastDayOfTargetMonth);
-        newDueDate = `${targetYear}-${String(targetMonth).padStart(2, '0')}-${String(clampedDay).padStart(2, '0')}`;
-      }
+    // --- Step 1: Process parent tasks ---
+    const sourceParents = await client.query(
+      `SELECT * FROM tasks WHERE month_id = $1 AND parent_task_id IS NULL ORDER BY sort_order`,
+      [sourceMonthId]
+    );
 
-      // Match target task by template_id, falling back to title match
-      let matchQuery, matchParams;
-      if (src.template_id) {
-        matchQuery = `SELECT id FROM tasks WHERE month_id = $1 AND template_id = $2 AND parent_task_id IS NOT NULL`;
-        matchParams = [monthId, src.template_id];
-      } else {
-        matchQuery = `SELECT id FROM tasks WHERE month_id = $1 AND title = $2 AND parent_task_id IS NOT NULL`;
-        matchParams = [monthId, src.title];
-      }
-      const targets = await client.query(matchQuery, matchParams);
-      for (const t of targets.rows) {
-        await client.query(
-          `UPDATE tasks SET assignee = $1, due_date = $2, updated_at = NOW() WHERE id = $3`,
-          [src.assignee || null, newDueDate, t.id]
+    for (const srcParent of sourceParents.rows) {
+      // Find or create matching parent in target month
+      let targetParentId;
+      let matchParent;
+      if (srcParent.template_id) {
+        matchParent = await client.query(
+          `SELECT id FROM tasks WHERE month_id = $1 AND template_id = $2 AND parent_task_id IS NULL`,
+          [monthId, srcParent.template_id]
         );
-        updated++;
+      } else {
+        matchParent = await client.query(
+          `SELECT id FROM tasks WHERE month_id = $1 AND title = $2 AND parent_task_id IS NULL`,
+          [monthId, srcParent.title]
+        );
+      }
+
+      if (matchParent.rows.length > 0) {
+        targetParentId = matchParent.rows[0].id;
+      } else {
+        // Create new parent group in target month
+        const orderRes = await client.query(
+          `SELECT COALESCE(MAX(sort_order), -1) + 1 AS next FROM tasks WHERE month_id = $1 AND parent_task_id IS NULL`,
+          [monthId]
+        );
+        const newParent = await client.query(
+          `INSERT INTO tasks (month_id, template_id, title, status, sort_order)
+           VALUES ($1, $2, $3, 'not_started', $4) RETURNING id`,
+          [monthId, srcParent.template_id || null, srcParent.title, orderRes.rows[0].next]
+        );
+        targetParentId = newParent.rows[0].id;
+        created++;
+      }
+
+      // --- Step 2: Process subtasks under this parent ---
+      const sourceSubtasks = await client.query(
+        `SELECT * FROM tasks WHERE month_id = $1 AND parent_task_id = $2 ORDER BY sort_order`,
+        [sourceMonthId, srcParent.id]
+      );
+
+      for (const srcSub of sourceSubtasks.rows) {
+        const newDueDate = shiftDate(srcSub.due_date);
+
+        // Find matching subtask in target
+        let matchSub;
+        if (srcSub.template_id) {
+          matchSub = await client.query(
+            `SELECT id FROM tasks WHERE month_id = $1 AND template_id = $2 AND parent_task_id = $3`,
+            [monthId, srcSub.template_id, targetParentId]
+          );
+        } else {
+          matchSub = await client.query(
+            `SELECT id FROM tasks WHERE month_id = $1 AND title = $2 AND parent_task_id = $3`,
+            [monthId, srcSub.title, targetParentId]
+          );
+        }
+
+        if (matchSub.rows.length > 0) {
+          // Update existing subtask
+          await client.query(
+            `UPDATE tasks SET assignee = $1, due_date = $2, updated_at = NOW() WHERE id = $3`,
+            [srcSub.assignee || null, newDueDate, matchSub.rows[0].id]
+          );
+          updated++;
+        } else {
+          // Create new subtask (reset to not_started, copy assignee/date)
+          const orderRes = await client.query(
+            `SELECT COALESCE(MAX(sort_order), -1) + 1 AS next FROM tasks WHERE month_id = $1 AND parent_task_id = $2`,
+            [monthId, targetParentId]
+          );
+          await client.query(
+            `INSERT INTO tasks (month_id, template_id, parent_task_id, title, assignee, due_date, status, sort_order)
+             VALUES ($1, $2, $3, $4, $5, $6, 'not_started', $7)`,
+            [monthId, srcSub.template_id || null, targetParentId, srcSub.title,
+             srcSub.assignee || null, newDueDate, orderRes.rows[0].next]
+          );
+          created++;
+        }
       }
     }
+
     await client.query('COMMIT');
-    res.json({ ok: true, updated });
+    res.json({ ok: true, updated, created });
   } catch (err) {
     await client.query('ROLLBACK');
     res.status(500).json({ error: err.message });
