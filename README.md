@@ -60,6 +60,7 @@ Railway will automatically redeploy with the new variable.
 | `DATABASE_URL` | Yes | PostgreSQL connection string (auto-set by Railway when you add a Postgres DB) |
 | `APP_PASSWORD` | Yes | Shared password to access the app |
 | `PORT` | No | Server port (Railway sets this automatically) |
+| `SLACK_WEBHOOK_URL` | No | Slack Incoming Webhook URL for daily reminders (see below) |
 
 ---
 
@@ -86,6 +87,21 @@ Railway will automatically redeploy with the new variable.
    cd frontend && npm start
    ```
 6. Open [http://localhost:3000](http://localhost:3000).
+
+---
+
+## Setting Up Slack Notifications
+
+Daily reminders fire at 9:00 AM Mountain Time for any task that is due the next day or overdue and not yet complete.
+
+1. Go to [api.slack.com/apps](https://api.slack.com/apps) → **Create New App** → **From scratch**
+2. Name it (e.g. "Monthly Close") and pick your workspace
+3. Click **Incoming Webhooks** → toggle **Activate Incoming Webhooks** on
+4. Click **Add New Webhook to Workspace** → pick the channel (e.g. `#monthly-close`) → **Allow**
+5. Copy the Webhook URL (looks like `https://hooks.slack.com/services/T.../B.../...`)
+6. In Railway → web service → Variables → add `SLACK_WEBHOOK_URL` with that value
+
+To test it immediately without waiting for 9am, you can temporarily call the notifier endpoint (or just wait — if any tasks have due dates set it'll fire automatically the next morning).
 
 ---
 

@@ -3,8 +3,10 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+const cron = require('node-cron');
 const pool = require('./db');
 const { seed } = require('./db/seed-init');
+const { sendSlackNotification } = require('./jobs/slackNotifier');
 
 const { router: authRouter, requireAuth } = require('./routes/auth');
 const monthsRouter = require('./routes/months');
@@ -42,6 +44,11 @@ async function initDb() {
   await pool.query(schema);
   await seed(pool);
 }
+
+// Daily Slack notification at 9:00 AM Mountain Time (America/Denver)
+cron.schedule('0 9 * * *', () => {
+  sendSlackNotification().catch(err => console.error('[Slack] Error:', err.message));
+}, { timezone: 'America/Denver' });
 
 app.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
