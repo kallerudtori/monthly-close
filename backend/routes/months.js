@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../db');
 const { createMonthTasks } = require('../db/seed-init');
+const { copyFromPrevious } = require('../db/copyFromPrevious');
 
 // Get all months
 router.get('/', async (req, res) => {
@@ -28,7 +29,9 @@ router.post('/ensure-current', async (req, res) => {
     );
 
     if (monthRes.rows.length > 0) {
-      await createMonthTasks(client, monthRes.rows[0].id);
+      const newMonthId = monthRes.rows[0].id;
+      await createMonthTasks(client, newMonthId);
+      await copyFromPrevious(client, newMonthId);
     }
 
     await client.query('COMMIT');
@@ -53,7 +56,9 @@ router.post('/prepare', async (req, res) => {
       [year, month]
     );
     if (monthRes.rows.length > 0) {
-      await createMonthTasks(client, monthRes.rows[0].id);
+      const newMonthId = monthRes.rows[0].id;
+      await createMonthTasks(client, newMonthId);
+      await copyFromPrevious(client, newMonthId);
     }
     await client.query('COMMIT');
     const result = await pool.query('SELECT * FROM months WHERE year = $1 AND month = $2', [year, month]);
