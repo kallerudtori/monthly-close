@@ -49,7 +49,8 @@ export default function App() {
     try {
       await api.ensureCurrentMonth();
       const data = await loadMonths();
-      const current = data[0];
+      const now = new Date();
+      const current = data.find(m => m.year === now.getFullYear() && m.month === now.getMonth() + 1) || data[0];
       if (current) {
         setSelectedMonthId(current.id);
         await loadTasks(current.id);
@@ -210,12 +211,12 @@ export default function App() {
 
         {!isReadOnly && selectedMonth && (() => {
           const now = new Date();
-          const isFuture = selectedMonth.year > now.getFullYear() ||
-            (selectedMonth.year === now.getFullYear() && selectedMonth.month > now.getMonth() + 1);
+          const isPast = selectedMonth.year < now.getFullYear() ||
+            (selectedMonth.year === now.getFullYear() && selectedMonth.month < now.getMonth() + 1);
           const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
           const prevMonth = selectedMonth.month === 1 ? 12 : selectedMonth.month - 1;
           const prevYear = selectedMonth.month === 1 ? selectedMonth.year - 1 : selectedMonth.year;
-          if (!isFuture) return null;
+          if (isPast) return null;
           return (
             <div style={styles.copyBanner}>
               <span style={{ color: '#374151', fontSize: 13 }}>
