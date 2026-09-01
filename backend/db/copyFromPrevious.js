@@ -43,18 +43,23 @@ async function copyFromPrevious(client, monthId) {
 
     if (matchParent.rows.length > 0) {
       targetParentId = matchParent.rows[0].id;
-    } else {
+    } else if (!srcParent.template_id) {
+      // Only create the parent if it was manually added (no template) — template-based
+      // groups that are missing were deliberately deleted and should stay gone
       const orderRes = await client.query(
         `SELECT COALESCE(MAX(sort_order), -1) + 1 AS next FROM tasks WHERE month_id = $1 AND parent_task_id IS NULL`,
         [monthId]
       );
       const newParent = await client.query(
         `INSERT INTO tasks (month_id, template_id, title, status, sort_order)
-         VALUES ($1, $2, $3, 'not_started', $4) RETURNING id`,
-        [monthId, srcParent.template_id || null, srcParent.title, orderRes.rows[0].next]
+         VALUES ($1, NULL, $2, 'not_started', $3) RETURNING id`,
+        [monthId, srcParent.title, orderRes.rows[0].next]
       );
       targetParentId = newParent.rows[0].id;
       created++;
+    } else {
+      // Template-based group was removed from target month — skip it and its subtasks
+      continue;
     }
 
     // Process subtasks
@@ -80,15 +85,17 @@ async function copyFromPrevious(client, monthId) {
           [srcSub.assignee || null, newDueDate, matchSub.rows[0].id]
         );
         updated++;
-      } else {
+      } else if (!srcSub.template_id) {
+        // Only create subtask if manually added — template subtasks that are
+        // missing were deliberately deleted and should stay gone
         const orderRes = await client.query(
           `SELECT COALESCE(MAX(sort_order), -1) + 1 AS next FROM tasks WHERE month_id = $1 AND parent_task_id = $2`,
           [monthId, targetParentId]
         );
         await client.query(
           `INSERT INTO tasks (month_id, template_id, parent_task_id, title, assignee, due_date, status, sort_order)
-           VALUES ($1, $2, $3, $4, $5, $6, 'not_started', $7)`,
-          [monthId, srcSub.template_id || null, targetParentId, srcSub.title,
+           VALUES ($1, NULL, $2, $3, $4, $5, 'not_started', $6)`,
+          [monthId, targetParentId, srcSub.title,
            srcSub.assignee || null, newDueDate, orderRes.rows[0].next]
         );
         created++;
