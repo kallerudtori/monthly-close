@@ -21,6 +21,7 @@ export default function App() {
   const [addGroupError, setAddGroupError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [initError, setInitError] = useState(null);
+  const [assigneeFilter, setAssigneeFilter] = useState(''); // local-only, never persisted or synced
   const pollRef = useRef(null);
 
   const loadTasks = useCallback(async (monthId) => {
@@ -150,7 +151,8 @@ export default function App() {
     try {
       await api.reorderParents(selectedMonthId, newTasks.map(t => t.id));
     } catch (err) {
-      console.error('Reorder failed:', err);
+      alert(err.message || 'Reorder failed.');
+      await loadTasks(selectedMonthId);
     }
   }
 
@@ -203,6 +205,26 @@ export default function App() {
       <main style={styles.main}>
         <ProgressBar tasks={tasks} selectedMonth={selectedMonth} />
 
+        <div style={styles.filterBar}>
+          <label style={styles.filterLabel}>Filter by assignee:</label>
+          <select
+            value={assigneeFilter}
+            onChange={(e) => setAssigneeFilter(e.target.value)}
+            style={styles.filterSelect}
+          >
+            <option value="">All Assignees</option>
+            <option value="__unassigned__">Unassigned</option>
+            {teamMembers.map((m) => (
+              <option key={m.id} value={m.name}>{m.name}</option>
+            ))}
+          </select>
+          {assigneeFilter && (
+            <button onClick={() => setAssigneeFilter('')} style={styles.clearFilterBtn}>
+              Clear filter
+            </button>
+          )}
+        </div>
+
         {isReadOnly && (
           <div style={styles.readOnlyBanner}>
             This month is read-only. Only the current and future months can be edited.
@@ -241,6 +263,7 @@ export default function App() {
             onMoveDown={() => handleMoveGroup(i, 1)}
             isFirst={i === 0}
             isLast={i === tasks.length - 1}
+            assigneeFilter={assigneeFilter}
           />
         ))}
 
@@ -306,6 +329,18 @@ const styles = {
     width: 36, height: 36, border: '3px solid #e5e7eb',
     borderTopColor: '#2563eb', borderRadius: '50%',
     animation: 'spin 0.8s linear infinite',
+  },
+  filterBar: {
+    display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16,
+  },
+  filterLabel: { fontSize: 13, color: '#6b7280', fontWeight: 500 },
+  filterSelect: {
+    padding: '6px 12px', borderRadius: 6, border: '1.5px solid #e5e7eb',
+    background: '#fff', fontSize: 13, cursor: 'pointer', outline: 'none',
+  },
+  clearFilterBtn: {
+    background: 'none', border: 'none', color: '#2563eb',
+    fontSize: 13, fontWeight: 500, cursor: 'pointer', padding: '4px 0',
   },
   readOnlyBanner: {
     background: '#fef9c3', border: '1px solid #fde047',

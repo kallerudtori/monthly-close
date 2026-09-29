@@ -8,7 +8,7 @@ const STATUS_COLORS = {
   complete: '#10b981',
 };
 
-export default function ParentTask({ task, teamMembers, onUpdate, isReadOnly, monthId, onMoveUp, onMoveDown, isFirst, isLast }) {
+export default function ParentTask({ task, teamMembers, onUpdate, isReadOnly, monthId, onMoveUp, onMoveDown, isFirst, isLast, assigneeFilter }) {
   const [collapsed, setCollapsed] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(task.title);
@@ -21,24 +21,52 @@ export default function ParentTask({ task, teamMembers, onUpdate, isReadOnly, mo
   const inProgress = subtasks.filter(t => t.status === 'in_progress').length;
   const pct = total > 0 ? Math.round((complete / total) * 100) : 0;
 
+  const visibleSubtasks = !assigneeFilter
+    ? subtasks
+    : subtasks.filter(t =>
+        assigneeFilter === '__unassigned__' ? !t.assignee : t.assignee === assigneeFilter
+      );
+
   let rollupStatus = 'not_started';
   if (complete === total && total > 0) rollupStatus = 'complete';
   else if (complete > 0 || inProgress > 0) rollupStatus = 'in_progress';
 
+  function reportError(err) {
+    alert(err.message || 'Something went wrong.');
+  }
+
   async function commitTitle() {
     setEditingTitle(false);
     if (titleDraft !== task.title && titleDraft.trim()) {
-      await api.updateTask(task.id, { title: titleDraft });
-      onUpdate();
+      try {
+        await api.updateTask(task.id, { title: titleDraft });
+        onUpdate();
+      } catch (err) {
+        reportError(err);
+      }
     }
   }
 
   async function handleAddSubtask() {
     if (!newSubtaskTitle.trim()) return;
-    await api.addSubtask(monthId, task.id, newSubtaskTitle.trim());
-    setNewSubtaskTitle('');
-    setAddingSubtask(false);
-    onUpdate();
+    try {
+      await api.addSubtask(monthId, task.id, newSubtaskTitle.trim());
+      setNewSubtaskTitle('');
+      setAddingSubtask(false);
+      onUpdate();
+    } catch (err) {
+      reportError(err);
+    }
+  }
+
+  async function handleDeleteGroup() {
+    if (!window.confirm(`Delete "${task.title}" and all its subtasks?`)) return;
+    try {
+      await api.deleteTask(task.id);
+      onUpdate();
+    } catch (err) {
+      reportError(err);
+    }
   }
 
   return (
@@ -89,11 +117,7 @@ export default function ParentTask({ task, teamMembers, onUpdate, isReadOnly, mo
 
           {/* Delete group */}
           {!isReadOnly && (
-            <button
-              onClick={() => { if (window.confirm(`Delete "${task.title}" and all its subtasks?`)) { api.deleteTask(task.id).then(onUpdate); } }}
-              style={styles.deleteGroupBtn}
-              title="Delete group"
-            >
+            <button onClick={handleDeleteGroup} style={styles.deleteGroupBtn} title="Delete group">
               ×
             </button>
           )}
@@ -115,7 +139,7 @@ export default function ParentTask({ task, teamMembers, onUpdate, isReadOnly, mo
               </tr>
             </thead>
             <tbody>
-              {subtasks.map((sub) => (
+              {visibleSubtasks.map((sub) => (
                 <SubTask
                   key={sub.id}
                   task={sub}
@@ -129,6 +153,13 @@ export default function ParentTask({ task, teamMembers, onUpdate, isReadOnly, mo
                 <tr>
                   <td colSpan={6} style={{ padding: '12px 16px', color: '#9ca3af', fontSize: 13, fontStyle: 'italic' }}>
                     No subtasks yet
+                  </td>
+                </tr>
+              )}
+              {subtasks.length > 0 && visibleSubtasks.length === 0 && (
+                <tr>
+                  <td colSpan={6} style={{ padding: '12px 16px', color: '#9ca3af', fontSize: 13, fontStyle: 'italic' }}>
+                    No subtasks match this filter
                   </td>
                 </tr>
               )}

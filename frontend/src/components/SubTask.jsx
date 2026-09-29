@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { api } from '../services/api';
 
 const STATUS_COLORS = {
@@ -13,12 +13,18 @@ const STATUS_LABELS = {
   complete: 'Complete',
 };
 
+function reportError(err) {
+  alert(err.message || 'Something went wrong.');
+}
+
 export default function SubTask({ task, teamMembers, onUpdate, onDelete, isReadOnly }) {
   const [editing, setEditing] = useState(null); // field name being edited
   const [draft, setDraft] = useState({});
   const today = new Date().toISOString().split('T')[0];
   const dueStr = task.due_date ? task.due_date.split('T')[0] : null;
   const isOverdue = dueStr && dueStr < today && task.status !== 'complete';
+  const isUnassigned = !isReadOnly && !task.assignee;
+  const isMissingDueDate = !isReadOnly && !dueStr;
 
   function startEdit(field, value) {
     if (isReadOnly) return;
@@ -32,20 +38,42 @@ export default function SubTask({ task, teamMembers, onUpdate, onDelete, isReadO
     const value = draft[field];
     const current = field === 'due_date' ? dueStr : task[field];
     if (value === current || (value === '' && current == null)) return;
-    await api.updateTask(task.id, { [field]: value || null });
-    onUpdate();
+    try {
+      await api.updateTask(task.id, { [field]: value || null });
+      onUpdate();
+    } catch (err) {
+      reportError(err);
+    }
   }
 
   async function handleStatusChange(status) {
     if (isReadOnly) return;
-    await api.updateTask(task.id, { status });
-    onUpdate();
+    try {
+      await api.updateTask(task.id, { status });
+      onUpdate();
+    } catch (err) {
+      reportError(err);
+    }
   }
 
   async function handleAssigneeChange(assignee) {
     if (isReadOnly) return;
-    await api.updateTask(task.id, { assignee: assignee || null });
-    onUpdate();
+    try {
+      await api.updateTask(task.id, { assignee: assignee || null });
+      onUpdate();
+    } catch (err) {
+      reportError(err);
+    }
+  }
+
+  async function handleDelete() {
+    if (!window.confirm('Delete this subtask?')) return;
+    try {
+      await api.deleteTask(task.id);
+      onUpdate();
+    } catch (err) {
+      reportError(err);
+    }
   }
 
   return (
@@ -72,7 +100,7 @@ export default function SubTask({ task, teamMembers, onUpdate, onDelete, isReadO
       </td>
 
       {/* Assignee */}
-      <td style={styles.td}>
+      <td style={{ ...styles.td, ...(isUnassigned ? styles.unassignedCell : {}) }}>
         <select
           value={task.assignee || ''}
           onChange={(e) => handleAssigneeChange(e.target.value)}
@@ -87,7 +115,7 @@ export default function SubTask({ task, teamMembers, onUpdate, onDelete, isReadO
       </td>
 
       {/* Due Date */}
-      <td style={styles.td}>
+      <td style={{ ...styles.td, ...(isMissingDueDate ? styles.missingDateCell : {}) }}>
         {editing === 'due_date' ? (
           <input
             type="date"
@@ -170,11 +198,7 @@ export default function SubTask({ task, teamMembers, onUpdate, onDelete, isReadO
       {/* Delete */}
       <td style={{ ...styles.td, width: 36 }}>
         {!isReadOnly && (
-          <button
-            onClick={() => { if (window.confirm('Delete this subtask?')) { api.deleteTask(task.id).then(onUpdate); } }}
-            style={styles.deleteBtn}
-            title="Delete"
-          >
+          <button onClick={handleDelete} style={styles.deleteBtn} title="Delete">
             ×
           </button>
         )}
@@ -194,6 +218,14 @@ const styles = {
     borderBottom: '1px solid #f3f4f6',
     fontSize: 13,
     verticalAlign: 'middle',
+  },
+  unassignedCell: {
+    background: '#f5f3ff',
+    boxShadow: 'inset 3px 0 0 #a78bfa',
+  },
+  missingDateCell: {
+    background: '#fffbeb',
+    boxShadow: 'inset 3px 0 0 #f59e0b',
   },
   editableText: {
     cursor: 'default',

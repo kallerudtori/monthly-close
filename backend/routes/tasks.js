@@ -2,19 +2,15 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../db');
 const { copyFromPrevious } = require('../db/copyFromPrevious');
+const { isMonthReadOnly, getMonthIdForTask, LOCKED_MESSAGE } = require('../db/monthLock');
 
 // Get all tasks for a month (hierarchical)
 router.get('/month/:monthId', async (req, res) => {
   try {
     const { monthId } = req.params;
 
-    // Read-only if the month is before the current calendar month
-    const now = new Date();
-    const monthData = await pool.query('SELECT year, month FROM months WHERE id = $1', [monthId]);
-    if (monthData.rows.length === 0) return res.status(404).json({ error: 'Month not found' });
-    const { year, month } = monthData.rows[0];
-    const isReadOnly = year < now.getFullYear() ||
-      (year === now.getFullYear() && month < now.getMonth() + 1);
+    const isReadOnly = await isMonthReadOnly(pool, monthId);
+    if (isReadOnly === null) return res.status(404).json({ error: 'Month not found' });
 
     const parents = await pool.query(
       `SELECT * FROM tasks WHERE month_id = $1 AND parent_task_id IS NULL ORDER BY sort_order`,
@@ -45,6 +41,11 @@ router.get('/month/:monthId', async (req, res) => {
 router.patch('/:id', async (req, res) => {
   try {
     const { id } = req.params;
+
+    const monthId = await getMonthIdForTask(pool, id);
+    if (monthId === null) return res.status(404).json({ error: 'Task not found' });
+    if (await isMonthReadOnly(pool, monthId)) return res.status(403).json({ error: LOCKED_MESSAGE });
+
     const { title, assignee, due_date, status, notes } = req.body;
 
     const fields = [];
@@ -78,6 +79,9 @@ router.patch('/:id', async (req, res) => {
 router.post('/parent', async (req, res) => {
   try {
     const { monthId, title } = req.body;
+
+    if (await isMonthReadOnly(pool, monthId)) return res.status(403).json({ error: LOCKED_MESSAGE });
+
     const orderRes = await pool.query(
       'SELECT COALESCE(MAX(sort_order), -1) + 1 AS next FROM tasks WHERE month_id = $1 AND parent_task_id IS NULL',
       [monthId]
@@ -97,6 +101,9 @@ router.post('/parent', async (req, res) => {
 router.post('/subtask', async (req, res) => {
   try {
     const { monthId, parentTaskId, title } = req.body;
+
+    if (await isMonthReadOnly(pool, monthId)) return res.status(403).json({ error: LOCKED_MESSAGE });
+
     const orderRes = await pool.query(
       'SELECT COALESCE(MAX(sort_order), -1) + 1 AS next FROM tasks WHERE month_id = $1 AND parent_task_id = $2',
       [monthId, parentTaskId]
@@ -115,7 +122,13 @@ router.post('/subtask', async (req, res) => {
 // Delete a task (and its subtasks via CASCADE)
 router.delete('/:id', async (req, res) => {
   try {
-    await pool.query('DELETE FROM tasks WHERE id = $1', [req.params.id]);
+    const { id } = req.params;
+
+    const monthId = await getMonthIdForTask(pool, id);
+    if (monthId === null) return res.status(404).json({ error: 'Task not found' });
+    if (await isMonthReadOnly(pool, monthId)) return res.status(403).json({ error: LOCKED_MESSAGE });
+
+    await pool.query('DELETE FROM tasks WHERE id = $1', [id]);
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -125,6 +138,9 @@ router.delete('/:id', async (req, res) => {
 // Copy assignees, due dates, and any new tasks from previous month into target month
 router.post('/copy-from-previous/:monthId', async (req, res) => {
   const { monthId } = req.params;
+
+  if (await isMonthReadOnly(pool, monthId)) return res.status(403).json({ error: LOCKED_MESSAGE });
+
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -142,6 +158,9 @@ router.post('/copy-from-previous/:monthId', async (req, res) => {
 // Reorder parent tasks
 router.post('/reorder-parents', async (req, res) => {
   const { monthId, orderedIds } = req.body;
+
+  if (await isMonthReadOnly(pool, monthId)) return res.status(403).json({ error: LOCKED_MESSAGE });
+
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
