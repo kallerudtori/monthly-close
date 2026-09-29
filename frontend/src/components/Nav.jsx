@@ -5,13 +5,18 @@ const MONTH_NAMES = [
   'July','August','September','October','November','December'
 ];
 
-export default function Nav({ months, selectedMonthId, onSelectMonth, onOpenSettings, onLogout, onPrepareNextMonth }) {
+export default function Nav({ months, selectedMonthId, onSelectMonth, onOpenSettings, onLogout, onPrepareNextMonth, isReadOnly, onCopyFromPrevious }) {
   // Determine if next month already exists
   const now = new Date();
   const nextMonth = now.getMonth() + 2 > 12 ? 1 : now.getMonth() + 2;
   const nextYear = now.getMonth() + 2 > 12 ? now.getFullYear() + 1 : now.getFullYear();
   const nextMonthExists = months.some(m => m.month === nextMonth && m.year === nextYear);
   const nextMonthName = `${MONTH_NAMES[nextMonth - 1]} ${nextYear}`;
+
+  const selectedMonth = months.find(m => m.id === selectedMonthId);
+  const prevMonth = selectedMonth ? (selectedMonth.month === 1 ? 12 : selectedMonth.month - 1) : null;
+  const prevYear = selectedMonth ? (selectedMonth.month === 1 ? selectedMonth.year - 1 : selectedMonth.year) : null;
+  const prevMonthName = prevMonth ? `${MONTH_NAMES[prevMonth - 1]} ${prevYear}` : '';
 
   return (
     <nav style={styles.nav}>
@@ -33,6 +38,15 @@ export default function Nav({ months, selectedMonthId, onSelectMonth, onOpenSett
         {!nextMonthExists && (
           <button onClick={onPrepareNextMonth} style={styles.prepareBtn} title={`Set up ${nextMonthName} checklist early`}>
             + Prepare {nextMonthName}
+          </button>
+        )}
+        {!isReadOnly && selectedMonth && (
+          <button
+            onClick={onCopyFromPrevious}
+            style={styles.copyLink}
+            title={`Copy assignees & due dates from ${prevMonthName}`}
+          >
+            ↙ copy from {MONTH_NAMES[prevMonth - 1]}
           </button>
         )}
       </div>
@@ -83,6 +97,16 @@ const styles = {
     padding: '5px 12px',
     borderRadius: 6,
     cursor: 'pointer',
+  },
+  copyLink: {
+    background: 'none',
+    border: 'none',
+    color: '#6b7280',
+    fontSize: 12,
+    padding: '4px 2px',
+    cursor: 'pointer',
+    textDecoration: 'underline',
+    textDecorationStyle: 'dotted',
   },
   right: { display: 'flex', alignItems: 'center', gap: 12 },
   iconBtn: {
