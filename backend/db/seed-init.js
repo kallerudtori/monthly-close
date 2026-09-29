@@ -83,6 +83,16 @@ async function seed(pool) {
       }
     }
 
+    // Remove retired template groups so they stop being recreated for new months.
+    // Deleting the parent template cascades to its subtask templates automatically.
+    const RETIRED_TEMPLATE_TITLES = ['Premium Upgrades'];
+    for (const title of RETIRED_TEMPLATE_TITLES) {
+      await client.query(
+        'DELETE FROM task_templates WHERE title = $1 AND parent_template_id IS NULL',
+        [title]
+      );
+    }
+
     const now = new Date();
     const year = now.getFullYear();
     const month = now.getMonth() + 1;
