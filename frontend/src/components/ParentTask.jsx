@@ -13,8 +13,10 @@ const STATUS_SORT_ORDER = { not_started: 0, in_progress: 1, complete: 2 };
 
 // Fixed across every group's table so columns line up regardless of that
 // group's own content (HTML tables otherwise auto-size per table).
+// Title has no width set on purpose — with table-layout: fixed, the one
+// column left unconstrained absorbs all the table's extra width, so Task
+// stretches on wide screens while the rest stay pinned to their content.
 const COLUMN_WIDTHS = {
-  title: 280,
   assignee: 130,
   due_date: 120,
   status: 140,
@@ -192,7 +194,7 @@ export default function ParentTask({
           <table style={styles.table}>
             <thead>
               <tr style={styles.thead}>
-                <SortableHeader label="Task" field="title" sortField={sortField} sortDirection={sortDirection} onSort={onSort} style={{ ...styles.th, width: COLUMN_WIDTHS.title }} />
+                <SortableHeader label="Task" field="title" sortField={sortField} sortDirection={sortDirection} onSort={onSort} style={styles.th} />
                 <SortableHeader label="Assignee" field="assignee" sortField={sortField} sortDirection={sortDirection} onSort={onSort} style={{ ...styles.th, width: COLUMN_WIDTHS.assignee }} />
                 <SortableHeader label="Due Date" field="due_date" sortField={sortField} sortDirection={sortDirection} onSort={onSort} style={{ ...styles.th, width: COLUMN_WIDTHS.due_date }} />
                 <SortableHeader label="Status" field="status" sortField={sortField} sortDirection={sortDirection} onSort={onSort} style={{ ...styles.th, width: COLUMN_WIDTHS.status }} />
