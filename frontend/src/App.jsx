@@ -324,7 +324,7 @@ export default function App() {
 
 const styles = {
   app: { minHeight: '100vh', background: theme.bgSubtle },
-  main: { maxWidth: 1200, margin: '0 auto', padding: '24px 32px' },
+  main: { maxWidth: 1800, width: '92%', margin: '0 auto', padding: '24px 0' },
   loadingScreen: {
     minHeight: '100vh', display: 'flex', flexDirection: 'column',
     alignItems: 'center', justifyContent: 'center',
