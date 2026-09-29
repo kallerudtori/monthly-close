@@ -164,6 +164,16 @@ export default function App() {
 
   const selectedMonth = months.find(m => m.id === selectedMonthId);
 
+  function subtaskMatchesFilter(sub) {
+    if (!assigneeFilter) return true;
+    return assigneeFilter === '__unassigned__' ? !sub.assignee : sub.assignee === assigneeFilter;
+  }
+
+  // Tasks with subtasks narrowed to the active filter — drives the progress bar/stats
+  const filteredTasks = assigneeFilter
+    ? tasks.map(t => ({ ...t, subtasks: (t.subtasks || []).filter(subtaskMatchesFilter) }))
+    : tasks;
+
   if (!authed) {
     return <Login onLogin={() => setAuthed(true)} />;
   }
@@ -205,7 +215,7 @@ export default function App() {
       />
 
       <main style={styles.main}>
-        <ProgressBar tasks={tasks} selectedMonth={selectedMonth} />
+        <ProgressBar tasks={filteredTasks} selectedMonth={selectedMonth} />
 
         <div style={styles.filterBar}>
           <label style={styles.filterLabel}>Filter by assignee:</label>
@@ -233,21 +243,25 @@ export default function App() {
           </div>
         )}
 
-        {tasks.map((task, i) => (
-          <ParentTask
-            key={task.id}
-            task={task}
-            teamMembers={teamMembers}
-            onUpdate={handleUpdate}
-            isReadOnly={isReadOnly}
-            monthId={selectedMonthId}
-            onMoveUp={() => handleMoveGroup(i, -1)}
-            onMoveDown={() => handleMoveGroup(i, 1)}
-            isFirst={i === 0}
-            isLast={i === tasks.length - 1}
-            assigneeFilter={assigneeFilter}
-          />
-        ))}
+        {tasks.map((task, i) => {
+          const hasMatch = !assigneeFilter || (task.subtasks || []).some(subtaskMatchesFilter);
+          if (!hasMatch) return null;
+          return (
+            <ParentTask
+              key={task.id}
+              task={task}
+              teamMembers={teamMembers}
+              onUpdate={handleUpdate}
+              isReadOnly={isReadOnly}
+              monthId={selectedMonthId}
+              onMoveUp={() => handleMoveGroup(i, -1)}
+              onMoveDown={() => handleMoveGroup(i, 1)}
+              isFirst={i === 0}
+              isLast={i === tasks.length - 1}
+              assigneeFilter={assigneeFilter}
+            />
+          );
+        })}
 
         {!isReadOnly && (
           <div style={styles.addGroupSection}>
