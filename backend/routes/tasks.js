@@ -155,29 +155,4 @@ router.post('/copy-from-previous/:monthId', async (req, res) => {
   }
 });
 
-// Reorder parent tasks
-router.post('/reorder-parents', async (req, res) => {
-  const { monthId, orderedIds } = req.body;
-
-  if (await isMonthReadOnly(pool, monthId)) return res.status(403).json({ error: LOCKED_MESSAGE });
-
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    for (let i = 0; i < orderedIds.length; i++) {
-      await client.query(
-        'UPDATE tasks SET sort_order = $1 WHERE id = $2 AND month_id = $3',
-        [i, orderedIds[i], monthId]
-      );
-    }
-    await client.query('COMMIT');
-    res.json({ ok: true });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    res.status(500).json({ error: err.message });
-  } finally {
-    client.release();
-  }
-});
-
 module.exports = router;

@@ -52,8 +52,6 @@ export const api = {
   addSubtask: (monthId, parentTaskId, title) =>
     request('POST', '/tasks/subtask', { monthId, parentTaskId, title }),
   deleteTask: (id) => request('DELETE', `/tasks/${id}`),
-  reorderParents: (monthId, orderedIds) =>
-    request('POST', '/tasks/reorder-parents', { monthId, orderedIds }),
   copyFromPrevious: (monthId) => request('POST', `/tasks/copy-from-previous/${monthId}`),
 
   getTeamMembers: () => request('GET', '/settings/team-members'),

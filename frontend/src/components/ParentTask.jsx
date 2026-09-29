@@ -8,7 +8,60 @@ const STATUS_COLORS = {
   complete: '#10b981',
 };
 
-export default function ParentTask({ task, teamMembers, onUpdate, isReadOnly, monthId, onMoveUp, onMoveDown, isFirst, isLast, assigneeFilter }) {
+const STATUS_SORT_ORDER = { not_started: 0, in_progress: 1, complete: 2 };
+
+function compareSubtasks(a, b, field) {
+  switch (field) {
+    case 'due_date': {
+      const aVal = a.due_date ? a.due_date.split('T')[0] : null;
+      const bVal = b.due_date ? b.due_date.split('T')[0] : null;
+      if (aVal === bVal) return 0;
+      if (aVal === null) return 1;
+      if (bVal === null) return -1;
+      return aVal < bVal ? -1 : 1;
+    }
+    case 'assignee': {
+      const aVal = a.assignee || null;
+      const bVal = b.assignee || null;
+      if (aVal === bVal) return 0;
+      if (aVal === null) return 1;
+      if (bVal === null) return -1;
+      return aVal.localeCompare(bVal);
+    }
+    case 'status':
+      return STATUS_SORT_ORDER[a.status] - STATUS_SORT_ORDER[b.status];
+    case 'title':
+      return a.title.localeCompare(b.title);
+    case 'notes': {
+      const aVal = a.notes || null;
+      const bVal = b.notes || null;
+      if (aVal === bVal) return 0;
+      if (aVal === null) return 1;
+      if (bVal === null) return -1;
+      return aVal.localeCompare(bVal);
+    }
+    default:
+      return 0;
+  }
+}
+
+function SortableHeader({ label, field, sortField, sortDirection, onSort, style }) {
+  const isActive = sortField === field;
+  return (
+    <th
+      style={{ ...style, cursor: 'pointer', userSelect: 'none' }}
+      onClick={() => onSort(field)}
+      title={`Sort by ${label}`}
+    >
+      {label}{isActive && <span style={{ marginLeft: 4 }}>{sortDirection === 'asc' ? '▲' : '▼'}</span>}
+    </th>
+  );
+}
+
+export default function ParentTask({
+  task, teamMembers, onUpdate, isReadOnly, monthId, assigneeFilter,
+  sortField, sortDirection, onSort,
+}) {
   const [collapsed, setCollapsed] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(task.title);
@@ -26,6 +79,11 @@ export default function ParentTask({ task, teamMembers, onUpdate, isReadOnly, mo
     : subtasks.filter(t =>
         assigneeFilter === '__unassigned__' ? !t.assignee : t.assignee === assigneeFilter
       );
+
+  const sortedSubtasks = [...visibleSubtasks].sort((a, b) => {
+    const result = compareSubtasks(a, b, sortField);
+    return sortDirection === 'desc' ? -result : result;
+  });
 
   let rollupStatus = 'not_started';
   if (complete === total && total > 0) rollupStatus = 'complete';
@@ -107,14 +165,6 @@ export default function ParentTask({ task, teamMembers, onUpdate, isReadOnly, mo
           </div>
           <span style={styles.pctLabel}>{pct}%</span>
 
-          {/* Reorder */}
-          {!isReadOnly && (
-            <div style={styles.reorderBtns}>
-              <button onClick={onMoveUp} disabled={isFirst} style={styles.reorderBtn} title="Move up">↑</button>
-              <button onClick={onMoveDown} disabled={isLast} style={styles.reorderBtn} title="Move down">↓</button>
-            </div>
-          )}
-
           {/* Delete group */}
           {!isReadOnly && (
             <button onClick={handleDeleteGroup} style={styles.deleteGroupBtn} title="Delete group">
@@ -130,16 +180,16 @@ export default function ParentTask({ task, teamMembers, onUpdate, isReadOnly, mo
           <table style={styles.table}>
             <thead>
               <tr style={styles.thead}>
-                <th style={{ ...styles.th, minWidth: 180 }}>Task</th>
-                <th style={{ ...styles.th, width: 120 }}>Assignee</th>
-                <th style={{ ...styles.th, width: 130 }}>Due Date</th>
-                <th style={{ ...styles.th, width: 130 }}>Status</th>
-                <th style={{ ...styles.th, minWidth: 160 }}>Notes</th>
+                <SortableHeader label="Task" field="title" sortField={sortField} sortDirection={sortDirection} onSort={onSort} style={{ ...styles.th, minWidth: 180 }} />
+                <SortableHeader label="Assignee" field="assignee" sortField={sortField} sortDirection={sortDirection} onSort={onSort} style={{ ...styles.th, width: 120 }} />
+                <SortableHeader label="Due Date" field="due_date" sortField={sortField} sortDirection={sortDirection} onSort={onSort} style={{ ...styles.th, width: 130 }} />
+                <SortableHeader label="Status" field="status" sortField={sortField} sortDirection={sortDirection} onSort={onSort} style={{ ...styles.th, width: 130 }} />
+                <SortableHeader label="Notes" field="notes" sortField={sortField} sortDirection={sortDirection} onSort={onSort} style={{ ...styles.th, minWidth: 160 }} />
                 <th style={{ ...styles.th, width: 36 }} />
               </tr>
             </thead>
             <tbody>
-              {visibleSubtasks.map((sub) => (
+              {sortedSubtasks.map((sub) => (
                 <SubTask
                   key={sub.id}
                   task={sub}
@@ -153,13 +203,6 @@ export default function ParentTask({ task, teamMembers, onUpdate, isReadOnly, mo
                 <tr>
                   <td colSpan={6} style={{ padding: '12px 16px', color: '#9ca3af', fontSize: 13, fontStyle: 'italic' }}>
                     No subtasks yet
-                  </td>
-                </tr>
-              )}
-              {subtasks.length > 0 && visibleSubtasks.length === 0 && (
-                <tr>
-                  <td colSpan={6} style={{ padding: '12px 16px', color: '#9ca3af', fontSize: 13, fontStyle: 'italic' }}>
-                    No subtasks match this filter
                   </td>
                 </tr>
               )}
@@ -232,12 +275,6 @@ const styles = {
   miniTrack: { width: 80, height: 6, background: '#e5e7eb', borderRadius: 999, overflow: 'hidden' },
   miniFill: { height: '100%', borderRadius: 999, transition: 'width 0.3s' },
   pctLabel: { fontSize: 12, color: '#6b7280', width: 32, textAlign: 'right' },
-  reorderBtns: { display: 'flex', gap: 2 },
-  reorderBtn: {
-    background: 'none', border: '1px solid #e5e7eb', borderRadius: 4,
-    cursor: 'pointer', padding: '1px 6px', fontSize: 12, color: '#6b7280',
-    ':disabled': { opacity: 0.3 },
-  },
   deleteGroupBtn: {
     background: 'none', border: 'none', color: '#d1d5db',
     fontSize: 20, cursor: 'pointer', lineHeight: 1, padding: '0 4px',

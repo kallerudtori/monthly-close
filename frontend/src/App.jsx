@@ -22,7 +22,18 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [initError, setInitError] = useState(null);
   const [assigneeFilter, setAssigneeFilter] = useState(''); // local-only, never persisted or synced
+  const [sortField, setSortField] = useState('due_date'); // always resets to due date on load
+  const [sortDirection, setSortDirection] = useState('asc');
   const pollRef = useRef(null);
+
+  function handleSort(field) {
+    if (field === sortField) {
+      setSortDirection(d => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  }
 
   const loadTasks = useCallback(async (monthId) => {
     if (!monthId) return;
@@ -142,20 +153,6 @@ export default function App() {
     }
   }
 
-  async function handleMoveGroup(index, direction) {
-    const newTasks = [...tasks];
-    const swapIndex = index + direction;
-    if (swapIndex < 0 || swapIndex >= newTasks.length) return;
-    [newTasks[index], newTasks[swapIndex]] = [newTasks[swapIndex], newTasks[index]];
-    setTasks(newTasks);
-    try {
-      await api.reorderParents(selectedMonthId, newTasks.map(t => t.id));
-    } catch (err) {
-      alert(err.message || 'Reorder failed.');
-      await loadTasks(selectedMonthId);
-    }
-  }
-
   function handleLogout() {
     api.logout().catch(() => {});
     localStorage.removeItem('auth_token');
@@ -243,7 +240,7 @@ export default function App() {
           </div>
         )}
 
-        {tasks.map((task, i) => {
+        {tasks.map((task) => {
           const hasMatch = !assigneeFilter || (task.subtasks || []).some(subtaskMatchesFilter);
           if (!hasMatch) return null;
           return (
@@ -254,11 +251,10 @@ export default function App() {
               onUpdate={handleUpdate}
               isReadOnly={isReadOnly}
               monthId={selectedMonthId}
-              onMoveUp={() => handleMoveGroup(i, -1)}
-              onMoveDown={() => handleMoveGroup(i, 1)}
-              isFirst={i === 0}
-              isLast={i === tasks.length - 1}
               assigneeFilter={assigneeFilter}
+              sortField={sortField}
+              sortDirection={sortDirection}
+              onSort={handleSort}
             />
           );
         })}
