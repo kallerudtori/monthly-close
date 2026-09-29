@@ -6,6 +6,7 @@ import ParentTask from './components/ParentTask';
 import Settings from './components/Settings';
 import { api } from './services/api';
 import { theme } from './theme';
+import { celebrateSectionComplete } from './utils/confetti';
 
 const POLL_INTERVAL = 30000;
 
@@ -26,6 +27,7 @@ export default function App() {
   const [sortField, setSortField] = useState('due_date'); // always resets to due date on load
   const [sortDirection, setSortDirection] = useState('asc');
   const pollRef = useRef(null);
+  const groupCompletionRef = useRef({}); // task id -> was it 100% complete last render
 
   function handleSort(field) {
     if (field === sortField) {
@@ -93,6 +95,23 @@ export default function App() {
     }, POLL_INTERVAL);
     return () => clearInterval(pollRef.current);
   }, [authed, selectedMonthId, loadTasks]);
+
+  // Celebrate when a group transitions from not-fully-complete to 100% complete
+  useEffect(() => {
+    let anyNewlyComplete = false;
+    for (const task of tasks) {
+      const subtasks = task.subtasks || [];
+      const isComplete = subtasks.length > 0 && subtasks.every(s => s.status === 'complete');
+      const wasComplete = groupCompletionRef.current[task.id];
+      if (isComplete && wasComplete === false) {
+        anyNewlyComplete = true;
+      }
+      groupCompletionRef.current[task.id] = isComplete;
+    }
+    if (anyNewlyComplete) {
+      celebrateSectionComplete();
+    }
+  }, [tasks]);
 
   async function handleSelectMonth(id) {
     setSelectedMonthId(id);
