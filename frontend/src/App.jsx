@@ -5,6 +5,7 @@ import ProgressBar from './components/ProgressBar';
 import ParentTask from './components/ParentTask';
 import Settings from './components/Settings';
 import { api } from './services/api';
+import { theme } from './theme';
 
 const POLL_INTERVAL = 30000;
 
@@ -179,7 +180,7 @@ export default function App() {
     return (
       <div style={styles.loadingScreen}>
         <div style={styles.spinner} />
-        <p style={{ color: '#6b7280', marginTop: 16 }}>Loading…</p>
+        <p style={{ color: theme.textMuted, marginTop: 16 }}>Loading…</p>
       </div>
     );
   }
@@ -188,10 +189,10 @@ export default function App() {
     return (
       <div style={styles.loadingScreen}>
         <div style={styles.errorCard}>
-          <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1a1a2e', marginBottom: 8 }}>
+          <h2 style={{ fontFamily: theme.fontDisplay, fontSize: 18, fontWeight: 700, color: theme.text, marginBottom: 8 }}>
             Connection Error
           </h2>
-          <p style={{ color: '#6b7280', fontSize: 14, marginBottom: 20 }}>{initError}</p>
+          <p style={{ color: theme.textMuted, fontSize: 14, marginBottom: 20 }}>{initError}</p>
           <button onClick={init} style={styles.retryBtn}>Retry</button>
         </div>
       </div>
@@ -279,7 +280,7 @@ export default function App() {
                   <button onClick={() => { setAddingGroup(false); setNewGroupTitle(''); setAddGroupError(null); }} style={styles.cancelBtn}>Cancel</button>
                 </div>
                 {addGroupError && (
-                  <p style={{ color: '#dc2626', fontSize: 13, marginTop: 6 }}>Error: {addGroupError}</p>
+                  <p style={{ color: theme.danger, fontSize: 13, marginTop: 6 }}>Error: {addGroupError}</p>
                 )}
               </div>
             ) : (
@@ -303,60 +304,60 @@ export default function App() {
 }
 
 const styles = {
-  app: { minHeight: '100vh', background: '#f5f6fa' },
+  app: { minHeight: '100vh', background: theme.bgSubtle },
   main: { maxWidth: 1200, margin: '0 auto', padding: '24px 32px' },
   loadingScreen: {
     minHeight: '100vh', display: 'flex', flexDirection: 'column',
     alignItems: 'center', justifyContent: 'center',
   },
   errorCard: {
-    background: '#fff', borderRadius: 12, padding: '32px 40px',
-    boxShadow: '0 4px 24px rgba(0,0,0,0.10)', textAlign: 'center', maxWidth: 420,
+    background: theme.surface, borderRadius: theme.radiusLg, padding: '32px 40px',
+    boxShadow: theme.shadowMd, textAlign: 'center', maxWidth: 420,
   },
   retryBtn: {
-    background: '#2563eb', color: '#fff', border: 'none',
-    borderRadius: 8, padding: '10px 24px', fontSize: 14, fontWeight: 600, cursor: 'pointer',
+    background: theme.orange, color: theme.white, border: 'none',
+    borderRadius: theme.radiusSm, padding: '10px 24px', fontSize: 14, fontWeight: 600, cursor: 'pointer',
   },
   spinner: {
-    width: 36, height: 36, border: '3px solid #e5e7eb',
-    borderTopColor: '#2563eb', borderRadius: '50%',
+    width: 36, height: 36, border: `3px solid ${theme.border}`,
+    borderTopColor: theme.orange, borderRadius: '50%',
     animation: 'spin 0.8s linear infinite',
   },
   filterBar: {
     display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16,
   },
-  filterLabel: { fontSize: 13, color: '#6b7280', fontWeight: 500 },
+  filterLabel: { fontSize: 13, color: theme.textMuted, fontWeight: 500 },
   filterSelect: {
-    padding: '6px 12px', borderRadius: 6, border: '1.5px solid #e5e7eb',
-    background: '#fff', fontSize: 13, cursor: 'pointer', outline: 'none',
+    padding: '6px 12px', borderRadius: theme.radiusSm, border: `1.5px solid ${theme.border}`,
+    background: theme.white, fontSize: 13, cursor: 'pointer', outline: 'none',
   },
   clearFilterBtn: {
-    background: 'none', border: 'none', color: '#2563eb',
+    background: 'none', border: 'none', color: theme.royal,
     fontSize: 13, fontWeight: 500, cursor: 'pointer', padding: '4px 0',
   },
   readOnlyBanner: {
-    background: '#fef9c3', border: '1px solid #fde047',
-    borderRadius: 8, padding: '10px 16px',
-    fontSize: 13, color: '#854d0e', marginBottom: 16,
+    background: theme.lemon, border: `1px solid ${theme.warning}`,
+    borderRadius: theme.radiusSm, padding: '10px 16px',
+    fontSize: 13, color: theme.navy, marginBottom: 16,
   },
   addGroupSection: { marginTop: 8 },
   addGroupForm: { display: 'flex', gap: 8, alignItems: 'center' },
   addGroupInput: {
     flex: 1, maxWidth: 300, padding: '10px 14px',
-    border: '1.5px solid #2563eb', borderRadius: 8,
-    fontSize: 14, outline: 'none', background: '#fff',
+    border: `1.5px solid ${theme.orange}`, borderRadius: theme.radiusSm,
+    fontSize: 14, outline: 'none', background: theme.white,
   },
   addConfirmBtn: {
-    background: '#2563eb', color: '#fff', border: 'none',
-    borderRadius: 8, padding: '10px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer',
+    background: theme.orange, color: theme.white, border: 'none',
+    borderRadius: theme.radiusSm, padding: '10px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer',
   },
   cancelBtn: {
-    background: 'none', border: '1px solid #e5e7eb', color: '#6b7280',
-    borderRadius: 8, padding: '10px 14px', fontSize: 14, cursor: 'pointer',
+    background: 'none', border: `1px solid ${theme.border}`, color: theme.textMuted,
+    borderRadius: theme.radiusSm, padding: '10px 14px', fontSize: 14, cursor: 'pointer',
   },
   addGroupBtn: {
-    background: 'none', border: '2px dashed #d1d5db', color: '#6b7280',
-    borderRadius: 10, padding: '14px 24px', fontSize: 14, fontWeight: 500,
+    background: 'none', border: `2px dashed ${theme.borderStrong}`, color: theme.textMuted,
+    borderRadius: theme.radiusMd, padding: '14px 24px', fontSize: 14, fontWeight: 500,
     cursor: 'pointer', width: '100%', textAlign: 'center',
     transition: 'border-color 0.2s, color 0.2s',
   },

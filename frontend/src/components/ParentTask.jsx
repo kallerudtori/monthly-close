@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import SubTask from './SubTask';
 import { api } from '../services/api';
+import { theme } from '../theme';
 
 const STATUS_COLORS = {
-  not_started: '#9ca3af',
-  in_progress: '#f59e0b',
-  complete: '#10b981',
+  not_started: theme.textFaint,
+  in_progress: theme.warning,
+  complete: theme.success,
 };
 
 const STATUS_SORT_ORDER = { not_started: 0, in_progress: 1, complete: 2 };
@@ -201,7 +202,7 @@ export default function ParentTask({
               ))}
               {subtasks.length === 0 && (
                 <tr>
-                  <td colSpan={6} style={{ padding: '12px 16px', color: '#9ca3af', fontSize: 13, fontStyle: 'italic' }}>
+                  <td colSpan={6} style={{ padding: '12px 16px', color: theme.textFaint, fontSize: 13, fontStyle: 'italic' }}>
                     No subtasks yet
                   </td>
                 </tr>
@@ -240,10 +241,10 @@ export default function ParentTask({
 
 const styles = {
   container: {
-    background: '#fff',
-    borderRadius: 10,
+    background: theme.surface,
+    borderRadius: theme.radiusMd,
     marginBottom: 16,
-    boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+    boxShadow: theme.shadowXs,
     overflow: 'hidden',
   },
   header: {
@@ -251,59 +252,59 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: '14px 16px',
-    background: '#f8f9fc',
-    borderBottom: '1px solid #e5e7eb',
+    background: theme.bgSubtle,
+    borderBottom: `1px solid ${theme.border}`,
   },
   headerLeft: { display: 'flex', alignItems: 'center', gap: 10 },
   headerRight: { display: 'flex', alignItems: 'center', gap: 12 },
   chevronBtn: {
     background: 'none', border: 'none', cursor: 'pointer',
-    fontSize: 16, color: '#6b7280', padding: '0 2px', lineHeight: 1,
+    fontSize: 16, color: theme.textMuted, padding: '0 2px', lineHeight: 1,
   },
   groupTitle: {
-    fontSize: 15, fontWeight: 700, color: '#1a1a2e',
+    fontFamily: theme.fontDisplay, fontSize: 15, fontWeight: 600, color: theme.text,
   },
   titleInput: {
-    fontSize: 15, fontWeight: 700, color: '#1a1a2e',
-    border: '1.5px solid #2563eb', borderRadius: 4,
+    fontFamily: theme.fontDisplay, fontSize: 15, fontWeight: 600, color: theme.text,
+    border: `1.5px solid ${theme.orange}`, borderRadius: theme.radiusXs,
     padding: '2px 8px', outline: 'none',
   },
   statusDot: {
     width: 8, height: 8, borderRadius: '50%', display: 'inline-block',
   },
-  progress: { fontSize: 12, color: '#6b7280' },
-  miniTrack: { width: 80, height: 6, background: '#e5e7eb', borderRadius: 999, overflow: 'hidden' },
-  miniFill: { height: '100%', borderRadius: 999, transition: 'width 0.3s' },
-  pctLabel: { fontSize: 12, color: '#6b7280', width: 32, textAlign: 'right' },
+  progress: { fontSize: 12, color: theme.textMuted },
+  miniTrack: { width: 80, height: 6, background: theme.border, borderRadius: theme.radiusPill, overflow: 'hidden' },
+  miniFill: { height: '100%', borderRadius: theme.radiusPill, transition: 'width 0.3s' },
+  pctLabel: { fontSize: 12, color: theme.textMuted, width: 32, textAlign: 'right' },
   deleteGroupBtn: {
-    background: 'none', border: 'none', color: '#d1d5db',
+    background: 'none', border: 'none', color: theme.textFaint,
     fontSize: 20, cursor: 'pointer', lineHeight: 1, padding: '0 4px',
   },
   tableWrapper: { overflowX: 'auto' },
   table: { width: '100%', borderCollapse: 'collapse' },
-  thead: { background: '#f9fafb' },
+  thead: { background: theme.bgSubtle },
   th: {
     padding: '8px 12px', textAlign: 'left',
-    fontSize: 11, fontWeight: 600, color: '#9ca3af',
+    fontSize: 11, fontWeight: 600, color: theme.textFaint,
     textTransform: 'uppercase', letterSpacing: '0.05em',
-    borderBottom: '1px solid #e5e7eb',
+    borderBottom: `1px solid ${theme.border}`,
   },
-  addRow: { padding: '8px 16px', borderTop: '1px solid #f3f4f6' },
+  addRow: { padding: '8px 16px', borderTop: `1px solid ${theme.border}` },
   addForm: { display: 'flex', gap: 8, alignItems: 'center' },
   addInput: {
-    flex: 1, padding: '6px 10px', border: '1.5px solid #2563eb',
-    borderRadius: 6, fontSize: 13, outline: 'none',
+    flex: 1, padding: '6px 10px', border: `1.5px solid ${theme.orange}`,
+    borderRadius: theme.radiusSm, fontSize: 13, outline: 'none',
   },
   addConfirmBtn: {
-    background: '#2563eb', color: '#fff', border: 'none',
-    borderRadius: 6, padding: '6px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+    background: theme.orange, color: theme.white, border: 'none',
+    borderRadius: theme.radiusSm, padding: '6px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer',
   },
   cancelBtn: {
-    background: 'none', border: '1px solid #e5e7eb', color: '#6b7280',
-    borderRadius: 6, padding: '6px 12px', fontSize: 13, cursor: 'pointer',
+    background: 'none', border: `1px solid ${theme.border}`, color: theme.textMuted,
+    borderRadius: theme.radiusSm, padding: '6px 12px', fontSize: 13, cursor: 'pointer',
   },
   addSubtaskBtn: {
-    background: 'none', border: 'none', color: '#2563eb',
+    background: 'none', border: 'none', color: theme.royal,
     fontSize: 13, fontWeight: 500, cursor: 'pointer', padding: '4px 0',
   },
 };

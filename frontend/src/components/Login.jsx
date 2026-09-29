@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { api } from '../services/api';
+import { theme } from '../theme';
 
 export default function Login({ onLogin }) {
   const [password, setPassword] = useState('');
@@ -51,47 +52,48 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    background: '#f5f6fa',
+    background: theme.bgSubtle,
   },
   card: {
-    background: '#fff',
-    borderRadius: 12,
+    background: theme.surface,
+    borderRadius: theme.radiusLg,
     padding: '48px 40px',
     width: 360,
-    boxShadow: '0 4px 24px rgba(0,0,0,0.10)',
+    boxShadow: theme.shadowMd,
     textAlign: 'center',
   },
   title: {
+    fontFamily: theme.fontDisplay,
     fontSize: 28,
     fontWeight: 700,
-    color: '#1a1a2e',
+    color: theme.navy,
     marginBottom: 8,
   },
   subtitle: {
-    color: '#6b7280',
+    color: theme.textMuted,
     marginBottom: 32,
     fontSize: 14,
   },
   form: { display: 'flex', flexDirection: 'column', gap: 12 },
   input: {
     padding: '12px 16px',
-    borderRadius: 8,
-    border: '1.5px solid #e5e7eb',
+    borderRadius: theme.radiusSm,
+    border: `1.5px solid ${theme.border}`,
     fontSize: 15,
     outline: 'none',
     transition: 'border-color 0.2s',
   },
   error: {
-    color: '#ef4444',
+    color: theme.danger,
     fontSize: 13,
     textAlign: 'left',
   },
   button: {
     padding: '12px',
-    borderRadius: 8,
+    borderRadius: theme.radiusSm,
     border: 'none',
-    background: '#2563eb',
-    color: '#fff',
+    background: theme.orange,
+    color: theme.white,
     fontSize: 15,
     fontWeight: 600,
     cursor: 'pointer',

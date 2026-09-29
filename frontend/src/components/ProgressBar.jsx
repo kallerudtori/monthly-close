@@ -1,4 +1,5 @@
 import React from 'react';
+import { theme } from '../theme';
 
 const MONTH_NAMES = [
   'January','February','March','April','May','June',
@@ -31,11 +32,11 @@ export default function ProgressBar({ tasks, selectedMonth }) {
         <div style={{ ...styles.fill, width: `${pct}%` }} />
       </div>
       <div style={styles.stats}>
-        <Stat label="Total" value={total} color="#6b7280" />
-        <Stat label="Complete" value={complete} color="#10b981" />
-        <Stat label="In Progress" value={inProgress} color="#f59e0b" />
-        <Stat label="Not Started" value={notStarted} color="#9ca3af" />
-        <Stat label="Overdue" value={overdue} color="#ef4444" />
+        <Stat label="Total" value={total} color={theme.textMuted} />
+        <Stat label="Complete" value={complete} color={theme.success} />
+        <Stat label="In Progress" value={inProgress} color={theme.warning} />
+        <Stat label="Not Started" value={notStarted} color={theme.textFaint} />
+        <Stat label="Overdue" value={overdue} color={theme.danger} />
       </div>
     </div>
   );
@@ -52,11 +53,11 @@ function Stat({ label, value, color }) {
 
 const styles = {
   container: {
-    background: '#fff',
-    borderRadius: 10,
+    background: theme.surface,
+    borderRadius: theme.radiusMd,
     padding: '20px 24px',
     marginBottom: 20,
-    boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+    boxShadow: theme.shadowXs,
   },
   header: {
     display: 'flex',
@@ -64,23 +65,23 @@ const styles = {
     alignItems: 'center',
     marginBottom: 10,
   },
-  monthLabel: { fontSize: 16, fontWeight: 600, color: '#1a1a2e' },
-  pct: { fontSize: 15, fontWeight: 700, color: '#2563eb' },
+  monthLabel: { fontFamily: theme.fontDisplay, fontSize: 16, fontWeight: 600, color: theme.text },
+  pct: { fontSize: 15, fontWeight: 700, color: theme.orange },
   track: {
     height: 10,
-    background: '#e5e7eb',
-    borderRadius: 999,
+    background: theme.border,
+    borderRadius: theme.radiusPill,
     overflow: 'hidden',
     marginBottom: 16,
   },
   fill: {
     height: '100%',
-    background: 'linear-gradient(90deg, #2563eb, #10b981)',
-    borderRadius: 999,
+    background: `linear-gradient(90deg, ${theme.royal}, ${theme.emerald})`,
+    borderRadius: theme.radiusPill,
     transition: 'width 0.4s ease',
   },
   stats: { display: 'flex', gap: 32 },
   stat: { display: 'flex', flexDirection: 'column', alignItems: 'center' },
   statValue: { fontSize: 22, fontWeight: 700 },
-  statLabel: { fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 2 },
+  statLabel: { fontSize: 11, color: theme.textFaint, textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 2 },
 };

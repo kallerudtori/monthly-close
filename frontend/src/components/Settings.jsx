@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { api } from '../services/api';
+import { theme } from '../theme';
 
 export default function Settings({ teamMembers, onUpdate, onClose }) {
   const [newName, setNewName] = useState('');
@@ -63,45 +64,45 @@ export default function Settings({ teamMembers, onUpdate, onClose }) {
 
 const styles = {
   overlay: {
-    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 200,
+    position: 'fixed', inset: 0, background: 'rgba(2,44,82,0.35)', zIndex: 200,
     display: 'flex', justifyContent: 'flex-end',
   },
   panel: {
-    background: '#fff', width: 400, height: '100%',
-    boxShadow: '-4px 0 24px rgba(0,0,0,0.12)',
+    background: theme.surface, width: 400, height: '100%',
+    boxShadow: theme.shadowLg,
     display: 'flex', flexDirection: 'column',
   },
   header: {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    padding: '20px 24px', borderBottom: '1px solid #e5e7eb',
+    padding: '20px 24px', borderBottom: `1px solid ${theme.border}`,
   },
-  title: { fontSize: 18, fontWeight: 700, color: '#1a1a2e' },
+  title: { fontFamily: theme.fontDisplay, fontSize: 18, fontWeight: 700, color: theme.text },
   closeBtn: {
     background: 'none', border: 'none', fontSize: 24,
-    color: '#6b7280', cursor: 'pointer', lineHeight: 1,
+    color: theme.textMuted, cursor: 'pointer', lineHeight: 1,
   },
   section: { padding: 24 },
-  sectionTitle: { fontSize: 14, fontWeight: 600, color: '#374151', marginBottom: 6 },
-  hint: { fontSize: 12, color: '#9ca3af', marginBottom: 16 },
+  sectionTitle: { fontSize: 14, fontWeight: 600, color: theme.text, marginBottom: 6 },
+  hint: { fontSize: 12, color: theme.textFaint, marginBottom: 16 },
   memberList: { display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 16 },
   memberRow: {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    padding: '8px 12px', background: '#f9fafb', borderRadius: 6,
-    border: '1px solid #e5e7eb',
+    padding: '8px 12px', background: theme.bgSubtle, borderRadius: theme.radiusSm,
+    border: `1px solid ${theme.border}`,
   },
-  memberName: { fontSize: 14, color: '#1a1a2e' },
+  memberName: { fontSize: 14, color: theme.text },
   removeBtn: {
-    background: 'none', border: 'none', color: '#ef4444',
+    background: 'none', border: 'none', color: theme.danger,
     fontSize: 12, cursor: 'pointer', fontWeight: 500,
   },
   addRow: { display: 'flex', gap: 8 },
   addInput: {
-    flex: 1, padding: '8px 12px', border: '1.5px solid #e5e7eb',
-    borderRadius: 6, fontSize: 13, outline: 'none',
+    flex: 1, padding: '8px 12px', border: `1.5px solid ${theme.border}`,
+    borderRadius: theme.radiusSm, fontSize: 13, outline: 'none',
   },
   addBtn: {
-    background: '#2563eb', color: '#fff', border: 'none',
-    borderRadius: 6, padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+    background: theme.orange, color: theme.white, border: 'none',
+    borderRadius: theme.radiusSm, padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer',
   },
-  error: { color: '#ef4444', fontSize: 12, marginTop: 8 },
+  error: { color: theme.danger, fontSize: 12, marginTop: 8 },
 };

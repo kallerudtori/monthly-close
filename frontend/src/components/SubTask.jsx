@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { api } from '../services/api';
+import { theme } from '../theme';
 
 const STATUS_COLORS = {
-  not_started: '#9ca3af',
-  in_progress: '#f59e0b',
-  complete: '#10b981',
+  not_started: theme.textFaint,
+  in_progress: theme.warning,
+  complete: theme.success,
 };
 
 const STATUS_LABELS = {
@@ -77,7 +78,7 @@ export default function SubTask({ task, teamMembers, onUpdate, onDelete, isReadO
   }
 
   return (
-    <tr style={{ background: isOverdue ? '#fff7f7' : undefined }}>
+    <tr style={{ background: isOverdue ? 'rgba(215,38,61,0.05)' : undefined }}>
       {/* Title */}
       <td style={styles.td}>
         {editing === 'title' ? (
@@ -105,7 +106,7 @@ export default function SubTask({ task, teamMembers, onUpdate, onDelete, isReadO
           value={task.assignee || ''}
           onChange={(e) => handleAssigneeChange(e.target.value)}
           disabled={isReadOnly}
-          style={{ ...styles.select, color: task.assignee ? '#1a1a2e' : '#9ca3af' }}
+          style={{ ...styles.select, color: task.assignee ? theme.text : theme.textFaint }}
         >
           <option value="">—</option>
           {teamMembers.map((m) => (
@@ -132,7 +133,7 @@ export default function SubTask({ task, teamMembers, onUpdate, onDelete, isReadO
             style={{
               ...styles.editableText,
               ...(isReadOnly ? {} : styles.hoverable),
-              color: isOverdue ? '#ef4444' : dueStr ? '#1a1a2e' : '#9ca3af',
+              color: isOverdue ? theme.danger : dueStr ? theme.text : theme.textFaint,
               fontWeight: isOverdue ? 600 : undefined,
             }}
           >
@@ -178,7 +179,7 @@ export default function SubTask({ task, teamMembers, onUpdate, onDelete, isReadO
             style={{
               ...styles.editableText,
               ...(isReadOnly ? {} : styles.hoverable),
-              color: task.notes ? '#374151' : '#d1d5db',
+              color: task.notes ? theme.text : theme.textFaint,
               fontStyle: task.notes ? 'normal' : 'italic',
               fontSize: 12,
               maxWidth: 200,
@@ -215,50 +216,50 @@ function formatDate(str) {
 const styles = {
   td: {
     padding: '8px 12px',
-    borderBottom: '1px solid #f3f4f6',
+    borderBottom: `1px solid ${theme.border}`,
     fontSize: 13,
     verticalAlign: 'middle',
   },
   unassignedCell: {
-    background: '#f5f3ff',
-    boxShadow: 'inset 3px 0 0 #a78bfa',
+    background: theme.lavender,
+    boxShadow: `inset 3px 0 0 ${theme.royal}`,
   },
   missingDateCell: {
-    background: '#fffbeb',
-    boxShadow: 'inset 3px 0 0 #f59e0b',
+    background: theme.lemon,
+    boxShadow: `inset 3px 0 0 ${theme.warning}`,
   },
   editableText: {
     cursor: 'default',
-    borderRadius: 4,
+    borderRadius: theme.radiusXs,
     padding: '2px 4px',
     display: 'inline-block',
   },
   hoverable: {
     cursor: 'pointer',
-    ':hover': { background: '#f3f4f6' },
+    ':hover': { background: theme.bgSubtle },
   },
   inlineInput: {
     width: '100%',
     padding: '4px 8px',
-    border: '1.5px solid #2563eb',
-    borderRadius: 4,
+    border: `1.5px solid ${theme.orange}`,
+    borderRadius: theme.radiusXs,
     fontSize: 13,
     outline: 'none',
-    background: '#fff',
+    background: theme.white,
   },
   select: {
-    border: '1px solid #e5e7eb',
-    borderRadius: 4,
+    border: `1px solid ${theme.border}`,
+    borderRadius: theme.radiusXs,
     padding: '3px 6px',
     fontSize: 12,
-    background: '#fff',
+    background: theme.white,
     cursor: 'pointer',
     outline: 'none',
     minWidth: 80,
   },
   statusSelect: {
     border: '1.5px solid',
-    borderRadius: 999,
+    borderRadius: theme.radiusPill,
     padding: '3px 10px',
     fontSize: 11,
     fontWeight: 600,
@@ -269,21 +270,21 @@ const styles = {
   deleteBtn: {
     background: 'none',
     border: 'none',
-    color: '#d1d5db',
+    color: theme.textFaint,
     fontSize: 18,
     cursor: 'pointer',
     lineHeight: 1,
     padding: '0 4px',
-    borderRadius: 4,
+    borderRadius: theme.radiusXs,
     transition: 'color 0.15s',
   },
   overdueTag: {
     marginLeft: 6,
     fontSize: 10,
-    background: '#fef2f2',
-    color: '#ef4444',
-    border: '1px solid #fecaca',
-    borderRadius: 999,
+    background: '#fdecee',
+    color: theme.danger,
+    border: `1px solid ${theme.danger}55`,
+    borderRadius: theme.radiusPill,
     padding: '1px 6px',
     fontWeight: 600,
     verticalAlign: 'middle',
