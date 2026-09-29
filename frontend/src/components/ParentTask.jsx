@@ -256,6 +256,7 @@ const styles = {
     borderRadius: theme.radiusMd,
     marginBottom: 16,
     boxShadow: theme.shadowXs,
+    border: `1.5px solid ${theme.navy}`,
     overflow: 'hidden',
   },
   header: {
@@ -265,7 +266,6 @@ const styles = {
     padding: '14px 16px',
     background: theme.bgTint,
     borderBottom: `1px solid ${theme.borderStrong}`,
-    borderTop: `3px solid ${theme.navy}`,
   },
   headerLeft: { display: 'flex', alignItems: 'center', gap: 10 },
   headerRight: { display: 'flex', alignItems: 'center', gap: 12 },
