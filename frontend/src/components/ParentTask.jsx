@@ -11,6 +11,17 @@ const STATUS_COLORS = {
 
 const STATUS_SORT_ORDER = { not_started: 0, in_progress: 1, complete: 2 };
 
+// Fixed across every group's table so columns line up regardless of that
+// group's own content (HTML tables otherwise auto-size per table).
+const COLUMN_WIDTHS = {
+  title: 280,
+  assignee: 130,
+  due_date: 120,
+  status: 140,
+  notes: 220,
+  action: 36,
+};
+
 function compareSubtasks(a, b, field) {
   switch (field) {
     case 'due_date': {
@@ -181,12 +192,12 @@ export default function ParentTask({
           <table style={styles.table}>
             <thead>
               <tr style={styles.thead}>
-                <SortableHeader label="Task" field="title" sortField={sortField} sortDirection={sortDirection} onSort={onSort} style={{ ...styles.th, minWidth: 180 }} />
-                <SortableHeader label="Assignee" field="assignee" sortField={sortField} sortDirection={sortDirection} onSort={onSort} style={{ ...styles.th, width: 120 }} />
-                <SortableHeader label="Due Date" field="due_date" sortField={sortField} sortDirection={sortDirection} onSort={onSort} style={{ ...styles.th, width: 130 }} />
-                <SortableHeader label="Status" field="status" sortField={sortField} sortDirection={sortDirection} onSort={onSort} style={{ ...styles.th, width: 130 }} />
-                <SortableHeader label="Notes" field="notes" sortField={sortField} sortDirection={sortDirection} onSort={onSort} style={{ ...styles.th, minWidth: 160 }} />
-                <th style={{ ...styles.th, width: 36 }} />
+                <SortableHeader label="Task" field="title" sortField={sortField} sortDirection={sortDirection} onSort={onSort} style={{ ...styles.th, width: COLUMN_WIDTHS.title }} />
+                <SortableHeader label="Assignee" field="assignee" sortField={sortField} sortDirection={sortDirection} onSort={onSort} style={{ ...styles.th, width: COLUMN_WIDTHS.assignee }} />
+                <SortableHeader label="Due Date" field="due_date" sortField={sortField} sortDirection={sortDirection} onSort={onSort} style={{ ...styles.th, width: COLUMN_WIDTHS.due_date }} />
+                <SortableHeader label="Status" field="status" sortField={sortField} sortDirection={sortDirection} onSort={onSort} style={{ ...styles.th, width: COLUMN_WIDTHS.status }} />
+                <SortableHeader label="Notes" field="notes" sortField={sortField} sortDirection={sortDirection} onSort={onSort} style={{ ...styles.th, width: COLUMN_WIDTHS.notes }} />
+                <th style={{ ...styles.th, width: COLUMN_WIDTHS.action }} />
               </tr>
             </thead>
             <tbody>
@@ -281,7 +292,7 @@ const styles = {
     fontSize: 20, cursor: 'pointer', lineHeight: 1, padding: '0 4px',
   },
   tableWrapper: { overflowX: 'auto' },
-  table: { width: '100%', borderCollapse: 'collapse' },
+  table: { width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' },
   thead: { background: theme.bgSubtle },
   th: {
     padding: '8px 12px', textAlign: 'left',
