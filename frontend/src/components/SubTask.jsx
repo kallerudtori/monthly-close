@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { api } from '../services/api';
 import { theme } from '../theme';
+import { celebrateSectionComplete } from '../utils/confetti';
 
 const STATUS_COLORS = {
   not_started: theme.textFaint,
@@ -52,6 +53,12 @@ export default function SubTask({ task, teamMembers, onUpdate, onDelete, isReadO
     try {
       await api.updateTask(task.id, { status });
       onUpdate();
+      if (status === 'complete' && task.assignee) {
+        const assignedMember = teamMembers.find(m => m.name === task.assignee);
+        if (assignedMember?.always_confetti) {
+          celebrateSectionComplete();
+        }
+      }
     } catch (err) {
       reportError(err);
     }

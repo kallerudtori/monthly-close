@@ -59,6 +59,12 @@ async function seed(pool) {
   try {
     await client.query('BEGIN');
 
+    // Retrofit columns added after initial deploy — CREATE TABLE IF NOT EXISTS
+    // only affects brand new tables, so already-existing tables need this too.
+    await client.query(
+      'ALTER TABLE team_members ADD COLUMN IF NOT EXISTS always_confetti BOOLEAN NOT NULL DEFAULT false'
+    );
+
     const existing = await client.query('SELECT COUNT(*) FROM task_templates');
     if (parseInt(existing.rows[0].count) === 0) {
       for (const name of TEAM_MEMBERS) {

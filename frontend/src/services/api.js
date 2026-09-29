@@ -56,5 +56,6 @@ export const api = {
 
   getTeamMembers: () => request('GET', '/settings/team-members'),
   addTeamMember: (name) => request('POST', '/settings/team-members', { name }),
+  updateTeamMember: (id, data) => request('PATCH', `/settings/team-members/${id}`, data),
   deleteTeamMember: (id) => request('DELETE', `/settings/team-members/${id}`),
 };

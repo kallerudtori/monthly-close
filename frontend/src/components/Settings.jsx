@@ -24,6 +24,15 @@ export default function Settings({ teamMembers, onUpdate, onClose }) {
     onUpdate();
   }
 
+  async function handleToggleConfetti(id, current) {
+    try {
+      await api.updateTeamMember(id, { always_confetti: !current });
+      onUpdate();
+    } catch (e) {
+      alert(e.message || 'Failed to update.');
+    }
+  }
+
   return (
     <div style={styles.overlay} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div style={styles.panel}>
@@ -34,13 +43,26 @@ export default function Settings({ teamMembers, onUpdate, onClose }) {
 
         <section style={styles.section}>
           <h3 style={styles.sectionTitle}>Team Members</h3>
-          <p style={styles.hint}>These names populate the assignee dropdown on all subtasks.</p>
+          <p style={styles.hint}>
+            These names populate the assignee dropdown on all subtasks. Turn on
+            "Always Confetti 🎉" so that person's completed tasks always trigger
+            a full-screen confetti burst, not just whole-section completions.
+          </p>
 
           <div style={styles.memberList}>
             {teamMembers.map((m) => (
               <div key={m.id} style={styles.memberRow}>
                 <span style={styles.memberName}>{m.name}</span>
-                <button onClick={() => handleDelete(m.id, m.name)} style={styles.removeBtn}>Remove</button>
+                <div style={styles.memberActions}>
+                  <button
+                    onClick={() => handleToggleConfetti(m.id, m.always_confetti)}
+                    style={m.always_confetti ? styles.confettiBtnActive : styles.confettiBtn}
+                    title="Always trigger confetti when this person completes a task"
+                  >
+                    🎉 Always Confetti
+                  </button>
+                  <button onClick={() => handleDelete(m.id, m.name)} style={styles.removeBtn}>Remove</button>
+                </div>
               </div>
             ))}
           </div>
@@ -84,16 +106,27 @@ const styles = {
   section: { padding: 24 },
   sectionTitle: { fontSize: 14, fontWeight: 600, color: theme.text, marginBottom: 6 },
   hint: { fontSize: 12, color: theme.textFaint, marginBottom: 16 },
-  memberList: { display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 16 },
+  memberList: { display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16 },
   memberRow: {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
     padding: '8px 12px', background: theme.bgSubtle, borderRadius: theme.radiusSm,
-    border: `1px solid ${theme.border}`,
+    border: `1px solid ${theme.border}`, gap: 8,
   },
-  memberName: { fontSize: 14, color: theme.text },
+  memberName: { fontSize: 14, color: theme.text, flexShrink: 0 },
+  memberActions: { display: 'flex', alignItems: 'center', gap: 8 },
+  confettiBtn: {
+    background: theme.surface, border: `1px solid ${theme.border}`, color: theme.textMuted,
+    fontSize: 11, fontWeight: 500, padding: '4px 8px', borderRadius: theme.radiusPill,
+    cursor: 'pointer', whiteSpace: 'nowrap',
+  },
+  confettiBtnActive: {
+    background: theme.lemon, border: `1px solid ${theme.warning}`, color: theme.navy,
+    fontSize: 11, fontWeight: 600, padding: '4px 8px', borderRadius: theme.radiusPill,
+    cursor: 'pointer', whiteSpace: 'nowrap',
+  },
   removeBtn: {
     background: 'none', border: 'none', color: theme.danger,
-    fontSize: 12, cursor: 'pointer', fontWeight: 500,
+    fontSize: 12, cursor: 'pointer', fontWeight: 500, whiteSpace: 'nowrap',
   },
   addRow: { display: 'flex', gap: 8 },
   addInput: {
