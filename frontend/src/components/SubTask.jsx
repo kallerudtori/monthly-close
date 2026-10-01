@@ -85,7 +85,7 @@ export default function SubTask({ task, teamMembers, onUpdate, onDelete, isReadO
   }
 
   return (
-    <tr style={{ background: isOverdue ? 'rgba(215,38,61,0.05)' : undefined }}>
+    <tr className="subtask-row" style={{ background: isOverdue ? 'rgba(215,38,61,0.05)' : undefined }}>
       {/* Title */}
       <td style={styles.td}>
         {editing === 'title' ? (
