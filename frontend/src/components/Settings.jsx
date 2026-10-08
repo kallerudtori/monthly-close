@@ -24,6 +24,18 @@ export default function Settings({ teamMembers, onUpdate, onClose }) {
     onUpdate();
   }
 
+  async function handleSaveSlackId(m, value) {
+    const next = value.trim();
+    if (next === (m.slack_user_id || '')) return;
+    try {
+      await api.updateTeamMember(m.id, { slack_user_id: next });
+      setError('');
+      onUpdate();
+    } catch (e) {
+      setError(e.message || 'Failed to save Slack ID.');
+    }
+  }
+
   async function handleToggleConfetti(id, current) {
     try {
       await api.updateTeamMember(id, { always_confetti: !current });
@@ -47,22 +59,34 @@ export default function Settings({ teamMembers, onUpdate, onClose }) {
             These names populate the assignee dropdown on all subtasks. Turn on
             "Always Confetti 🎉" so that person's completed tasks always trigger
             a full-screen confetti burst, not just whole-section completions.
+            Add a Slack member ID (Slack profile → ⋮ → Copy member ID) to have
+            that person @mentioned in Slack reminders.
           </p>
 
           <div style={styles.memberList}>
             {teamMembers.map((m) => (
               <div key={m.id} style={styles.memberRow}>
-                <span style={styles.memberName}>{m.name}</span>
-                <div style={styles.memberActions}>
-                  <button
-                    onClick={() => handleToggleConfetti(m.id, m.always_confetti)}
-                    style={m.always_confetti ? styles.confettiBtnActive : styles.confettiBtn}
-                    title="Always trigger confetti when this person completes a task"
-                  >
-                    🎉 Always Confetti
-                  </button>
-                  <button onClick={() => handleDelete(m.id, m.name)} style={styles.removeBtn}>Remove</button>
+                <div style={styles.memberTop}>
+                  <span style={styles.memberName}>{m.name}</span>
+                  <div style={styles.memberActions}>
+                    <button
+                      onClick={() => handleToggleConfetti(m.id, m.always_confetti)}
+                      style={m.always_confetti ? styles.confettiBtnActive : styles.confettiBtn}
+                      title="Always trigger confetti when this person completes a task"
+                    >
+                      🎉 Always Confetti
+                    </button>
+                    <button onClick={() => handleDelete(m.id, m.name)} style={styles.removeBtn}>Remove</button>
+                  </div>
                 </div>
+                <input
+                  key={`${m.id}-${m.slack_user_id || ''}`}
+                  defaultValue={m.slack_user_id || ''}
+                  onBlur={(e) => handleSaveSlackId(m, e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); }}
+                  placeholder="Slack member ID (e.g. U01ABC234)"
+                  style={styles.slackInput}
+                />
               </div>
             ))}
           </div>
@@ -108,9 +132,14 @@ const styles = {
   hint: { fontSize: 12, color: theme.textFaint, marginBottom: 16 },
   memberList: { display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16 },
   memberRow: {
-    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    display: 'flex', flexDirection: 'column', gap: 6,
     padding: '8px 12px', background: theme.bgSubtle, borderRadius: theme.radiusSm,
-    border: `1px solid ${theme.border}`, gap: 8,
+    border: `1px solid ${theme.border}`,
+  },
+  memberTop: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  slackInput: {
+    padding: '5px 8px', border: `1px solid ${theme.border}`, borderRadius: theme.radiusSm,
+    fontSize: 12, outline: 'none', background: theme.surface, color: theme.text,
   },
   memberName: { fontSize: 14, color: theme.text, flexShrink: 0 },
   memberActions: { display: 'flex', alignItems: 'center', gap: 8 },

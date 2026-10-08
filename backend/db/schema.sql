@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS team_members (
   id SERIAL PRIMARY KEY,
   name VARCHAR(100) NOT NULL UNIQUE,
   always_confetti BOOLEAN NOT NULL DEFAULT false,
+  slack_user_id VARCHAR(32),
   created_at TIMESTAMP DEFAULT NOW()
 );
 

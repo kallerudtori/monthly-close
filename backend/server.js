@@ -6,7 +6,7 @@ const fs = require('fs');
 const cron = require('node-cron');
 const pool = require('./db');
 const { seed } = require('./db/seed-init');
-const { sendSlackNotification } = require('./jobs/slackNotifier');
+const { sendSlackNotification, sendDueTodayCheckin } = require('./jobs/slackNotifier');
 
 const { router: authRouter, requireAuth } = require('./routes/auth');
 const monthsRouter = require('./routes/months');
@@ -45,9 +45,14 @@ async function initDb() {
   await seed(pool);
 }
 
-// Daily Slack notification at 9:00 AM Mountain Time (America/Denver)
-cron.schedule('0 9 * * *', () => {
+// Weekday Slack digest at 9:00 AM Mountain Time (America/Denver)
+cron.schedule('0 9 * * 1-5', () => {
   sendSlackNotification().catch(err => console.error('[Slack] Error:', err.message));
+}, { timezone: 'America/Denver' });
+
+// Weekday 4:00 PM Mountain: ask about tasks due today that are still open
+cron.schedule('0 16 * * 1-5', () => {
+  sendDueTodayCheckin().catch(err => console.error('[Slack] Check-in error:', err.message));
 }, { timezone: 'America/Denver' });
 
 app.listen(PORT, async () => {

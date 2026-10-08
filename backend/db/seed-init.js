@@ -64,6 +64,9 @@ async function seed(pool) {
     await client.query(
       'ALTER TABLE team_members ADD COLUMN IF NOT EXISTS always_confetti BOOLEAN NOT NULL DEFAULT false'
     );
+    await client.query(
+      'ALTER TABLE team_members ADD COLUMN IF NOT EXISTS slack_user_id VARCHAR(32)'
+    );
 
     const existing = await client.query('SELECT COUNT(*) FROM task_templates');
     if (parseInt(existing.rows[0].count) === 0) {

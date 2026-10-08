@@ -28,16 +28,33 @@ router.post('/team-members', async (req, res) => {
   }
 });
 
-// Update a team member (currently just the always_confetti flag)
+// Update a team member (always_confetti flag and/or Slack member ID)
 router.patch('/team-members/:id', async (req, res) => {
   try {
-    const { always_confetti } = req.body;
-    if (always_confetti === undefined) {
-      return res.status(400).json({ error: 'always_confetti required' });
+    const { always_confetti, slack_user_id } = req.body;
+    if (always_confetti === undefined && slack_user_id === undefined) {
+      return res.status(400).json({ error: 'always_confetti or slack_user_id required' });
     }
+
+    const sets = [];
+    const values = [];
+    if (always_confetti !== undefined) {
+      values.push(!!always_confetti);
+      sets.push(`always_confetti = $${values.length}`);
+    }
+    if (slack_user_id !== undefined) {
+      const id = (slack_user_id || '').trim();
+      if (id && !/^[UW][A-Z0-9]{2,31}$/.test(id)) {
+        return res.status(400).json({ error: 'Slack ID should look like U01ABC234' });
+      }
+      values.push(id || null);
+      sets.push(`slack_user_id = $${values.length}`);
+    }
+    values.push(req.params.id);
+
     const result = await pool.query(
-      'UPDATE team_members SET always_confetti = $1 WHERE id = $2 RETURNING *',
-      [!!always_confetti, req.params.id]
+      `UPDATE team_members SET ${sets.join(', ')} WHERE id = $${values.length} RETURNING *`,
+      values
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Team member not found' });
     res.json(result.rows[0]);
