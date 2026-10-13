@@ -18,7 +18,7 @@ const STATUS_SORT_ORDER = { not_started: 0, in_progress: 1, complete: 2 };
 // stretches on wide screens while the rest stay pinned to their content.
 const COLUMN_WIDTHS = {
   assignee: 130,
-  due_date: 120,
+  due_date: 170,
   status: 140,
   notes: 220,
   action: 36,
