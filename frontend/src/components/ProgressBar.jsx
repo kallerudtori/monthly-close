@@ -12,18 +12,28 @@ export default function ProgressBar({ tasks, selectedMonth }) {
   const complete = subtasks.filter(t => t.status === 'complete').length;
   const inProgress = subtasks.filter(t => t.status === 'in_progress').length;
   const notStarted = subtasks.filter(t => t.status === 'not_started').length;
-  const today = new Date().toISOString().split('T')[0];
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  // Red highlighting applies to the current month only, like the table rows
+  const isCurrentMonth = !!selectedMonth &&
+    selectedMonth.year === now.getFullYear() && selectedMonth.month === now.getMonth() + 1;
   const overdue = subtasks.filter(
     t => t.due_date && t.due_date.split('T')[0] < today && t.status !== 'complete'
   ).length;
   const groups = tasks
     .filter(t => (t.subtasks || []).length > 0)
-    .map(t => ({
-      id: t.id,
-      title: t.title,
-      total: t.subtasks.length,
-      complete: t.subtasks.filter(st => st.status === 'complete').length,
-    }));
+    .map(t => {
+      const dueDates = t.subtasks.filter(st => st.due_date).map(st => st.due_date.split('T')[0]);
+      const lastDue = dueDates.length ? dueDates.reduce((a, b) => (a > b ? a : b)) : null;
+      const complete = t.subtasks.filter(st => st.status === 'complete').length;
+      return {
+        id: t.id,
+        late: isCurrentMonth && !!lastDue && lastDue < today && complete < t.subtasks.length,
+        title: t.title,
+        total: t.subtasks.length,
+        complete,
+      };
+    });
   const pct = total > 0 ? Math.round((complete / total) * 100) : 0;
 
   const monthLabel = selectedMonth
@@ -60,17 +70,17 @@ function GroupCard({ group }) {
   const pct = group.total > 0 ? (group.complete / group.total) * 100 : 0;
   return (
     <div
-      style={{ ...styles.card, ...(done ? styles.cardDone : null) }}
-      title={`${group.title}: ${group.complete} of ${group.total} complete`}
+      style={{ ...styles.card, ...(done ? styles.cardDone : null), ...(group.late ? styles.cardLate : null) }}
+      title={`${group.title}: ${group.complete} of ${group.total} complete${group.late ? ' (past its last due date)' : ''}`}
     >
       <span style={styles.cardTitle}>{group.title}</span>
       <div style={styles.cardRow}>
         {done
           ? <span style={styles.cardCheck}>✓ Complete</span>
-          : <span style={styles.cardCount}>{group.complete}/{group.total}</span>}
+          : <span style={{ ...styles.cardCount, ...(group.late ? { color: theme.danger } : null) }}>{group.complete}/{group.total}</span>}
       </div>
       <div style={styles.cardTrack}>
-        <div style={{ ...styles.cardFill, width: `${pct}%`, background: done ? theme.emerald : theme.royal }} />
+        <div style={{ ...styles.cardFill, width: `${pct}%`, background: done ? theme.emerald : group.late ? theme.danger : theme.royal }} />
       </div>
     </div>
   );
@@ -125,6 +135,7 @@ const styles = {
     display: 'flex', flexDirection: 'column', gap: 4,
   },
   cardDone: { background: '#ecfaf3', borderColor: theme.emerald },
+  cardLate: { background: '#fdecee', borderColor: theme.danger },
   cardTitle: {
     fontSize: 12, fontWeight: 600, color: theme.text,
     whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
